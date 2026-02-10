@@ -54,14 +54,8 @@ class AttendanceCameraActivity : AppCompatActivity() {
             ActivityCompat.requestPermissions(this, REQUIRED_PERMISSIONS, REQUEST_CODE_PERMISSIONS)
         }
 
-        findViewById<MaterialButton>(R.id.btn_manual_mode).setOnClickListener {
-            setResult(RESULT_CANCELED) // Or specific manual mode result
-            finish()
-        }
-
-        findViewById<FloatingActionButton>(R.id.fab_capture).setOnClickListener {
-            takePhoto()
-        }
+        findViewById<MaterialButton>(R.id.btn_manual_mode).visibility = android.view.View.GONE
+        findViewById<FloatingActionButton>(R.id.fab_capture).visibility = android.view.View.GONE
 
         cameraExecutor = Executors.newSingleThreadExecutor()
     }
@@ -157,34 +151,65 @@ class AttendanceCameraActivity : AppCompatActivity() {
         })
     }
 
+    private var isScanPaused = false
+
     private fun showRecognitionResult(result: com.kuma.evolve.network.RecognitionResponse) {
-        val builder = androidx.appcompat.app.AlertDialog.Builder(this)
+        if (isScanPaused) return
+
         if (result.recognized) {
-            builder.setTitle("✅ Rostro Reconocido")
-            builder.setMessage("Atleta: ${result.name}\nConfianza: ${result.confidence}%")
-            builder.setPositiveButton("Registrar Asistencia") { _, _ ->
-                submitAttendance(result.athleteId, result.name, "facial")
-            }
+            tvStatusHint.text = "✅ RECONOCIDO: ${result.name}"
+            tvStatusHint.setTextColor(getColor(R.color.kuma_gold))
+            
+            // Auto-submit attendance immediately
+            submitAttendance(result.athleteId, result.name, "facial")
         } else {
-            builder.setTitle("👤 No Reconocido")
-            builder.setMessage(result.message ?: "No se encontró coincidencia en la base de datos.")
-            builder.setPositiveButton("Registrar como Visitante") { _, _ ->
-                openManualRegistration()
-            }
+            tvStatusHint.text = "👤 ROSTRO NO RECONOCIDO"
+            tvStatusHint.setTextColor(getColor(R.color.kuma_red))
+            // Continuous scanning will naturally resume as we don't pause here for errors
         }
-        builder.setNegativeButton("Reintentar", null)
-        builder.show()
     }
 
     private fun submitAttendance(athleteId: String?, name: String?, mode: String) {
-        // Implement auto-submit logic here or return to fragment with data
-        Toast.makeText(this, "Asistencia registrada: $name", Toast.LENGTH_SHORT).show()
-        finish()
+        if (athleteId == null) return
+        
+        isScanPaused = true // Pause to avoid double registrations
+        
+        val athleteIdBody = athleteId.toRequestBody("text/plain".toMediaTypeOrNull())
+        val nameBody = name?.toRequestBody("text/plain".toMediaTypeOrNull()) ?: "Desconocido".toRequestBody("text/plain".toMediaTypeOrNull())
+        val modeBody = mode.toRequestBody("text/plain".toMediaTypeOrNull())
+        
+        // We'll use a dummy multi-part for the image as the backend expects it, 
+        // but for high speed we could optimize it later.
+        val emptyPart = okhttp3.MultipartBody.Part.createFormData("image", "none.jpg", ByteArray(0).toRequestBody("image/jpeg".toMediaTypeOrNull()))
+
+        com.kuma.evolve.network.RetrofitClient.instance.registerAttendance(
+            athleteIdBody, nameBody, modeBody, null, emptyPart
+        ).enqueue(object : retrofit2.Callback<com.kuma.evolve.network.AttendanceResponse> {
+            override fun onResponse(call: retrofit2.Call<com.kuma.evolve.network.AttendanceResponse>, response: retrofit2.Response<com.kuma.evolve.network.AttendanceResponse>) {
+                if (response.isSuccessful) {
+                    Toast.makeText(this@AttendanceCameraActivity, "Asistencia: $name", Toast.LENGTH_SHORT).show()
+                }
+                resetScannerAfterDelay()
+            }
+
+            override fun onFailure(call: retrofit2.Call<com.kuma.evolve.network.AttendanceResponse>, t: Throwable) {
+                tvStatusHint.text = "Error de conexión"
+                resetScannerAfterDelay()
+            }
+        })
+    }
+
+    private fun resetScannerAfterDelay() {
+        android.os.Handler(android.os.Looper.getMainLooper()).postDelayed({
+            isScanPaused = false
+            tvStatusHint.text = "Esperando atleta..."
+            tvStatusHint.setTextColor(getColor(R.color.kuma_white))
+        }, 3000) // 3 seconds cooldown
     }
 
     private fun openManualRegistration() {
-        // For now, just return
-        finish()
+        // Mode Strict: Manual registration disabled
+        Toast.makeText(this, "Modo Estricto: Solo reconocimiento facial permitido", Toast.LENGTH_LONG).show()
     }
 
     private fun imageProxyToBitmap(image: ImageProxy): Bitmap? {
@@ -205,7 +230,7 @@ class AttendanceCameraActivity : AppCompatActivity() {
 
     private class FaceAnalyzer(private val overlay: GraphicOverlay) : ImageAnalysis.Analyzer {
         private val options = FaceDetectorOptions.Builder()
-            .setPerformanceMode(FaceDetectorOptions.PERFORMANCE_MODE_FAST)
+            .setPerformanceMode(FaceDetectorOptions.PERFORMANCE_MODE_ACCURATE)
             .setLandmarkMode(FaceDetectorOptions.LANDMARK_MODE_ALL)
             .setContourMode(FaceDetectorOptions.CONTOUR_MODE_ALL)
             .build()
@@ -231,6 +256,12 @@ class AttendanceCameraActivity : AppCompatActivity() {
                         overlay.clear()
                         for (face in faces) {
                             overlay.add(FaceGraphic(overlay, face))
+                            
+                            // Trigger recognition if not paused
+                            if (faces.isNotEmpty()) {
+                                // For speed, we use the analyzer directly to send to recognition
+                                (overlay.context as? AttendanceCameraActivity)?.takePhoto()
+                            }
                         }
                     }
                     .addOnCompleteListener {

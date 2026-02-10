@@ -1,13 +1,13 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <!-- Kuma Dojo Premium Palette -->
-    <color name="kuma_red">#8B0000</color>
-    <color name="kuma_red_dark">#4B0000</color>
-    <color name="kuma_gold">#D4AF37</color>
-    <color name="kuma_gold_light">#F9E79F</color>
-    <color name="kuma_brown">#3E2723</color>
-    <color name="kuma_black">#121212</color>
-    <color name="kuma_white">#FAFAFA</color>
+    <!-- Kuma Dojo Vibrant Premium Palette -->
+    <color name="kuma_red">#B22222</color> <!-- Firebrick Red -->
+    <color name="kuma_red_dark">#7B0000</color>
+    <color name="kuma_gold">#FFD700</color> <!-- Strong Pure Gold -->
+    <color name="kuma_gold_light">#FFF176</color>
+    <color name="kuma_brown">#2D1B18</color>
+    <color name="kuma_black">#0A0A0A</color>
+    <color name="kuma_white">#FFFFFF</color>
     <color name="kuma_cream">#FFFDE7</color>
     
     <!-- Legacy/Defaults (Internal use) -->

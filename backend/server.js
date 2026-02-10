@@ -187,10 +187,15 @@ app.post('/api/athletes', upload.single('image'), async (req, res) => {
             console.log(`📅 Parsed date: ${athleteData.birthDate.toISOString()}`);
         }
 
-        // If file is uploaded, convert buffer to Base64 (Pre-shrunk for Android safety)
+        // Generar descriptor facial si hay imagen
         if (req.file) {
-            console.log(`🖼️ Processing image: ${req.file.originalname} (${req.file.size} bytes)`);
+            console.log(`🖼️ Procesando imagen e indexando rostro: ${req.file.originalname}`);
             athleteData.imageUrl = await processImage(req.file);
+            const descriptor = await FaceService.getDescriptor(req.file.buffer);
+            if (descriptor) {
+                athleteData.faceDescriptor = Array.from(descriptor);
+                console.log('🧬 Descriptor facial generado correctamente');
+            }
         }
 
         const newAthlete = new Athlete(athleteData);
@@ -220,10 +225,15 @@ app.put('/api/athletes/:id', upload.single('image'), async (req, res) => {
             updateData.birthDate = new Date(year, month - 1, day);
         }
 
-        // If file is uploaded, update imageUrl (Pre-shrunk)
+        // If file is uploaded, update imageUrl and refresh faceDescriptor
         if (req.file) {
-            console.log(`🖼️ Updating image for: ${updateData.name || id}`);
+            console.log(`🖼️ Actualizando imagen e indexando rostro para: ${updateData.name || id}`);
             updateData.imageUrl = await processImage(req.file);
+            const descriptor = await FaceService.getDescriptor(req.file.buffer);
+            if (descriptor) {
+                updateData.faceDescriptor = Array.from(descriptor);
+                console.log('🧬 Descriptor facial actualizado');
+            }
         }
 
         const updatedAthlete = await Athlete.findByIdAndUpdate(id, updateData, { new: true });

@@ -41,7 +41,7 @@ async function initFaceApi() {
 async function bufferToTensor(buffer) {
     const { data, info } = await sharp(buffer)
         .removeAlpha()
-        .resize(320, 240, { fit: 'inside' }) // Tamaño pequeño para máxima velocidad en JS
+        .resize(640, 480, { fit: 'inside' }) // Aumentada resolución para mayor precisión
         .raw()
         .toBuffer({ resolveWithObject: true });
 
