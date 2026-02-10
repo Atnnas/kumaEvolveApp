@@ -23,7 +23,9 @@ class FaceGraphic(overlay: GraphicOverlay, private val face: Face) : GraphicOver
         // Draw the main points (matrix)
         for (landmark in face.allLandmarks) {
             val point = landmark.position
-            canvas.drawCircle(point.x, point.y, 6f, dotPaint)
+            val x = translateX(point.x)
+            val y = translateY(point.y)
+            canvas.drawCircle(x, y, 6f, dotPaint)
         }
 
         // Draw contours (this builds the "mesh" feeling)
@@ -31,8 +33,8 @@ class FaceGraphic(overlay: GraphicOverlay, private val face: Face) : GraphicOver
             val points = contour.points
             for (i in 0 until points.size - 1) {
                 canvas.drawLine(
-                    points[i].x, points[i].y,
-                    points[i + 1].x, points[i + 1].y,
+                    translateX(points[i].x), translateY(points[i].y),
+                    translateX(points[i + 1].x), translateY(points[i + 1].y),
                     linePaint
                 )
             }

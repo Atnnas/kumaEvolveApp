@@ -214,7 +214,16 @@ class AttendanceCameraActivity : AppCompatActivity() {
         override fun analyze(imageProxy: ImageProxy) {
             val mediaImage = imageProxy.image
             if (mediaImage != null) {
-                val image = InputImage.fromMediaImage(mediaImage, imageProxy.imageInfo.rotationDegrees)
+                val rotationDegrees = imageProxy.imageInfo.rotationDegrees
+                
+                // If rotation is 90 or 270, swap width and height for coordinate mapping
+                if (rotationDegrees == 90 || rotationDegrees == 270) {
+                    overlay.setCameraInfo(imageProxy.height, imageProxy.width, true)
+                } else {
+                    overlay.setCameraInfo(imageProxy.width, imageProxy.height, true)
+                }
+
+                val image = InputImage.fromMediaImage(mediaImage, rotationDegrees)
                 detector.process(image)
                     .addOnSuccessListener { faces ->
                         overlay.clear()
