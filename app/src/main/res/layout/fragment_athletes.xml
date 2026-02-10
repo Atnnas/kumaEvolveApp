@@ -5,11 +5,58 @@
     android:layout_height="match_parent"
     android:background="?attr/colorSurface">
 
-    <androidx.recyclerview.widget.RecyclerView
-        android:id="@+id/rv_athletes"
+    <HorizontalScrollView
+        android:id="@+id/hsv_table"
         android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        android:paddingTop="16dp"
-        app:layoutManager="androidx.recyclerview.widget.LinearLayoutManager" />
+        android:layout_height="0dp"
+        android:scrollbars="none"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintBottom_toBottomOf="parent">
+
+        <LinearLayout
+            android:layout_width="wrap_content"
+            android:layout_height="match_parent"
+            android:orientation="vertical"
+            android:minWidth="600dp">
+
+            <LinearLayout
+                android:id="@+id/header_row"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:padding="8dp"
+                android:background="#D1CFCF">
+
+                <View
+                    android:layout_width="32dp"
+                    android:layout_height="0dp" />
+
+                <TextView android:layout_width="30dp" android:layout_height="wrap_content" android:text="#" android:textStyle="bold" android:gravity="center" android:textColor="#000000"/>
+                <TextView android:layout_width="56dp" android:layout_height="wrap_content" android:text="Foto" android:textStyle="bold" android:gravity="center" android:textColor="#000000"/>
+                <TextView android:layout_width="100dp" android:layout_height="wrap_content" android:text="Cédula" android:textStyle="bold" android:gravity="center" android:textColor="#000000"/>
+                <TextView android:layout_width="200dp" android:layout_height="wrap_content" android:text="Nombre" android:textStyle="bold" android:textColor="#000000" android:paddingStart="8dp"/>
+                <TextView android:layout_width="80dp" android:layout_height="wrap_content" android:text="Edad" android:textStyle="bold" android:gravity="center" android:textColor="#000000"/>
+                <TextView android:layout_width="100dp" android:layout_height="wrap_content" android:text="Grado" android:textStyle="bold" android:gravity="center" android:textColor="#000000"/>
+            </LinearLayout>
+
+            <androidx.recyclerview.widget.RecyclerView
+                android:id="@+id/rv_athletes"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                app:layoutManager="androidx.recyclerview.widget.LinearLayoutManager" />
+        </LinearLayout>
+    </HorizontalScrollView>
+
+    <com.google.android.material.floatingactionbutton.FloatingActionButton
+        android:id="@+id/fab_add_athlete"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_margin="24dp"
+        android:src="@android:drawable/ic_input_add"
+        app:tint="@android:color/white"
+        app:backgroundTint="#FF0000"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:shapeAppearanceOverlay="@style/ShapeAppearance.MaterialComponents.SmallComponent" />
 
 </androidx.constraintlayout.widget.ConstraintLayout>

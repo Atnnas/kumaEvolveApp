@@ -5,6 +5,20 @@ import retrofit2.Call
 import retrofit2.http.Body
 import retrofit2.http.GET
 import retrofit2.http.POST
+import retrofit2.http.PUT
+import retrofit2.http.DELETE
+import retrofit2.http.Path
+
+import com.kuma.evolve.data.Athlete
+import com.kuma.evolve.data.Attendance
+import com.kuma.evolve.network.RetrofitClient
+import com.kuma.evolve.network.CommonResponse
+import com.kuma.evolve.network.DeleteMultipleRequest
+import okhttp3.MultipartBody
+import okhttp3.RequestBody
+import retrofit2.http.Multipart
+import retrofit2.http.Part
+import retrofit2.http.Query
 
 // Data Models
 data class UserRequest(
@@ -25,12 +39,14 @@ data class UserData(
     val name: String
 )
 
-data class Athlete(
-    val _id: String,
-    val name: String,
-    val category: String,
-    val rank: String,
-    val imageUrl: String
+data class AthleteResponse(
+    val success: Boolean,
+    val athlete: Athlete?
+)
+
+data class AttendanceResponse(
+    val success: Boolean,
+    val attendance: Attendance?
 )
 
 interface ApiService {
@@ -39,4 +55,81 @@ interface ApiService {
 
     @GET("/api/athletes")
     fun getAthletes(): Call<List<Athlete>>
+
+    @GET("/api/athletes/{id}")
+    fun getAthleteById(@Path("id") id: String): Call<Athlete>
+
+    @Multipart
+    @POST("/api/athletes")
+    fun registerAthlete(
+        @Part("idCard") idCard: RequestBody,
+        @Part("name") name: RequestBody,
+        @Part("birthDate") birthDate: RequestBody,
+        @Part("grade") grade: RequestBody,
+        @Part("weight") weight: RequestBody,
+        @Part("consecutive") consecutive: RequestBody?,
+        @Part image: MultipartBody.Part?
+    ): Call<AthleteResponse>
+
+    @Multipart
+    @PUT("/api/athletes/{id}")
+    fun updateAthlete(
+        @Path("id") id: String,
+        @Part("idCard") idCard: RequestBody,
+        @Part("name") name: RequestBody,
+        @Part("birthDate") birthDate: RequestBody,
+        @Part("grade") grade: RequestBody,
+        @Part("weight") weight: RequestBody,
+        @Part image: MultipartBody.Part?
+    ): Call<AthleteResponse>
+
+    @DELETE("/api/athletes/{id}")
+    fun deleteAthlete(@Path("id") id: String): Call<CommonResponse>
+
+    @POST("/api/athletes/delete-multiple")
+    fun deleteMultipleAthletes(@Body request: DeleteMultipleRequest): Call<CommonResponse>
+
+    // Attendance endpoints
+    @Multipart
+    @POST("/api/attendance")
+    fun registerAttendance(
+        @Part("athleteId") athleteId: RequestBody?,
+        @Part("studentName") studentName: RequestBody,
+        @Part("registrationMode") registrationMode: RequestBody,
+        @Part("recognitionConfidence") recognitionConfidence: RequestBody?,
+        @Part image: MultipartBody.Part
+    ): Call<AttendanceResponse>
+
+    @GET("/api/attendance")
+    fun getAttendances(
+        @Query("from") from: String?,
+        @Query("to") to: String?,
+        @Query("athleteId") athleteId: String?
+    ): Call<List<Attendance>>
+
+    @PUT("/api/attendance/{id}")
+    fun updateAttendance(
+        @Path("id") id: String,
+        @Body updateData: Map<String, String>
+    ): Call<AttendanceResponse>
+
+    @DELETE("/api/attendance/{id}")
+    fun deleteAttendance(@Path("id") id: String): Call<CommonResponse>
+    @Multipart
+    @POST("/api/attendance/recognize")
+    fun recognizeFace(
+        @Part image: MultipartBody.Part
+    ): Call<RecognitionResponse>
 }
+
+data class RecognitionResponse(
+    val success: Boolean,
+    val recognized: Boolean,
+    val athleteId: String?,
+    val name: String?,
+    val confidence: Int?,
+    val message: String? = null
+)
+
+data class CommonResponse(val success: Boolean, val message: String? = null, val error: String? = null)
+data class DeleteMultipleRequest(val ids: List<String>)

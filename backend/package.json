@@ -1,9 +1,14 @@
 {
   "dependencies": {
+    "@tensorflow/tfjs": "^1.7.0",
     "cors": "^2.8.6",
     "dotenv": "^17.2.4",
     "express": "^4.22.1",
+    "face-api.js": "^0.22.2",
     "mongodb": "^3.7.3",
-    "mongoose": "^8.23.0"
+    "mongoose": "^8.23.0",
+    "multer": "^2.0.2",
+    "node-fetch": "^2.6.12",
+    "sharp": "^0.34.5"
   }
 }

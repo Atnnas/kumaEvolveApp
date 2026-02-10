@@ -1,72 +1,69 @@
 <?xml version="1.0" encoding="utf-8"?>
-<com.google.android.material.card.MaterialCardView xmlns:android="http://schemas.android.com/apk/res/android"
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
-    android:layout_marginHorizontal="16dp"
-    android:layout_marginVertical="8dp"
-    app:cardCornerRadius="12dp"
-    app:cardElevation="4dp"
-    app:strokeWidth="1dp"
-    app:strokeColor="#22FFFFFF">
+    android:orientation="horizontal"
+    android:padding="8dp"
+    android:gravity="center_vertical"
+    android:background="?attr/colorSurface">
 
-    <LinearLayout
-        android:layout_width="match_parent"
+    <CheckBox
+        android:id="@+id/athlete_checkbox"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content" />
+
+    <TextView
+        android:id="@+id/athlete_consecutive"
+        android:layout_width="30dp"
         android:layout_height="wrap_content"
-        android:orientation="horizontal"
-        android:padding="12dp"
-        android:gravity="center_vertical">
+        android:text="1"
+        android:gravity="center"
+        android:textColor="?attr/colorOnSurface" />
 
-        <com.google.android.material.imageview.ShapeableImageView
-            android:id="@+id/athlete_image"
-            android:layout_width="60dp"
-            android:layout_height="60dp"
-            android:layout_marginEnd="16dp"
-            android:scaleType="centerCrop"
-            android:background="#1F1F1F"
-            app:shapeAppearanceOverlay="@style/ShapeAppearance.MaterialComponents.SmallComponent" />
+    <com.google.android.material.imageview.ShapeableImageView
+        android:id="@+id/athlete_image"
+        android:layout_width="40dp"
+        android:layout_height="40dp"
+        android:scaleType="centerCrop"
+        android:layout_marginStart="8dp"
+        android:layout_marginEnd="8dp"
+        android:background="#1F1F1F"
+        app:shapeAppearanceOverlay="@style/CircularShapeAppearance" />
 
-        <LinearLayout
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:layout_weight="1"
-            android:orientation="vertical">
+    <TextView
+        android:id="@+id/athlete_id_card"
+        android:layout_width="100dp"
+        android:layout_height="wrap_content"
+        android:text="00000"
+        android:gravity="center"
+        android:textColor="?attr/colorOnSurface"
+        android:textSize="12sp" />
 
-            <TextView
-                android:id="@+id/athlete_name"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="Name"
-                android:textSize="18sp"
-                android:textStyle="bold"
-                android:textColor="?attr/colorOnSurface" />
+    <TextView
+        android:id="@+id/athlete_name"
+        android:layout_width="200dp"
+        android:layout_height="wrap_content"
+        android:text="Name"
+        android:paddingStart="8dp"
+        android:textStyle="bold"
+        android:textColor="?attr/colorOnSurface" />
 
-            <LinearLayout
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:orientation="horizontal"
-                android:layout_marginTop="4dp">
+    <TextView
+        android:id="@+id/athlete_age"
+        android:layout_width="80dp"
+        android:layout_height="wrap_content"
+        android:text="25"
+        android:gravity="center"
+        android:textColor="?attr/colorOnSurface" />
 
-                <TextView
-                    android:id="@+id/athlete_category"
-                    android:layout_width="0dp"
-                    android:layout_height="wrap_content"
-                    android:layout_weight="1"
-                    android:text="Category"
-                    android:textColor="?attr/colorOnSurface"
-                    android:alpha="0.7" />
+    <TextView
+        android:id="@+id/athlete_rank"
+        android:layout_width="100dp"
+        android:layout_height="wrap_content"
+        android:text="1er Dan"
+        android:gravity="center"
+        android:textColor="?attr/colorPrimary"
+        android:textStyle="bold" />
 
-                <TextView
-                    android:id="@+id/athlete_rank"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="Rank"
-                    android:textColor="?attr/colorPrimary"
-                    android:textStyle="bold" />
-            </LinearLayout>
-
-        </LinearLayout>
-
-    </LinearLayout>
-
-</com.google.android.material.card.MaterialCardView>
+</LinearLayout>

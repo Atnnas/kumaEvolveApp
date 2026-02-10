@@ -5,16 +5,32 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import androidx.fragment.app.Fragment
-
+import android.view.Menu
+import android.view.MenuInflater
+import android.view.MenuItem
 import android.widget.Toast
 import androidx.recyclerview.widget.RecyclerView
 import androidx.lifecycle.lifecycleScope
 import com.kuma.evolve.data.Athlete
+import com.kuma.evolve.network.RetrofitClient
+import com.kuma.evolve.network.DeleteMultipleRequest
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
+import com.google.android.material.floatingactionbutton.FloatingActionButton
+
 class AthletesFragment : Fragment() {
+    
+    private lateinit var adapter: AthletesAdapter
+    private val athletes = mutableListOf<Athlete>()
+    private var selectedCount = 0
+
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+        setHasOptionsMenu(true)
+    }
+
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?,
         savedInstanceState: Bundle?
@@ -26,50 +42,109 @@ class AthletesFragment : Fragment() {
         super.onViewCreated(view, savedInstanceState)
 
         val rvAthletes = view.findViewById<RecyclerView>(R.id.rv_athletes)
-        val athletes = mutableListOf<Athlete>()
-        val adapter = AthletesAdapter(athletes)
+        val fabAdd = view.findViewById<FloatingActionButton>(R.id.fab_add_athlete)
+        
+        adapter = AthletesAdapter(athletes) { count ->
+            selectedCount = count
+            activity?.invalidateOptionsMenu()
+        }
         rvAthletes.adapter = adapter
 
-        // Fetch from MongoDB using Native Driver
-        // Fetch from Backend using Retrofit
+        fabAdd.setOnClickListener {
+            parentFragmentManager.beginTransaction()
+                .replace(R.id.fragment_container, AddAthleteFragment())
+                .addToBackStack(null)
+                .commit()
+        }
+
+        loadAthletes()
+    }
+
+    override fun onCreateOptionsMenu(menu: Menu, inflater: MenuInflater) {
+        inflater.inflate(R.menu.athletes_menu, menu)
+        super.onCreateOptionsMenu(menu, inflater)
+    }
+
+    override fun onPrepareOptionsMenu(menu: Menu) {
+        val editItem = menu.findItem(R.id.action_edit)
+        val deleteItem = menu.findItem(R.id.action_delete)
+        
+        editItem?.isVisible = selectedCount == 1
+        deleteItem?.isVisible = selectedCount > 0
+        
+        super.onPrepareOptionsMenu(menu)
+    }
+
+    override fun onOptionsItemSelected(item: MenuItem): Boolean {
+        return when (item.itemId) {
+            R.id.action_edit -> {
+                val athlete = adapter.getSelectedAthlete()
+                if (athlete != null) {
+                    // --- TRANSACTION ARMOR ---
+                    // Don't carry the heavy Base64 string in the fragment transaction.
+                    // This prevents TransactionTooLargeException on high-res devices.
+                    val safeAthlete = athlete.copy(imageUrl = null)
+                    
+                    val fragment = AddAthleteFragment.newInstance(safeAthlete)
+                    parentFragmentManager.beginTransaction()
+                        .replace(R.id.fragment_container, fragment)
+                        .addToBackStack(null)
+                        .commit()
+                }
+                true
+            }
+            R.id.action_delete -> {
+                deleteSelectedAthletes()
+                true
+            }
+            else -> super.onOptionsItemSelected(item)
+        }
+    }
+
+    private fun deleteSelectedAthletes() {
+        val ids = adapter.getSelectedIds()
         lifecycleScope.launch(Dispatchers.IO) {
             try {
-                val response = com.kuma.evolve.network.RetrofitClient.instance.getAthletes().execute()
-                
+                val response = RetrofitClient.instance.deleteMultipleAthletes(DeleteMultipleRequest(ids)).execute()
                 withContext(Dispatchers.Main) {
-                    if (response.isSuccessful && response.body() != null) {
-                        athletes.clear()
-                        response.body()!!.forEach { netAthlete ->
-                            athletes.add(Athlete(
-                                name = netAthlete.name,
-                                category = netAthlete.category,
-                                rank = netAthlete.rank,
-                                imageUrl = netAthlete.imageUrl
-                            ))
-                        }
-                        adapter.notifyDataSetChanged()
+                    if (response.isSuccessful) {
+                        Toast.makeText(context, "Atletas eliminados", Toast.LENGTH_SHORT).show()
+                        adapter.clearSelection()
+                        selectedCount = 0
+                        activity?.invalidateOptionsMenu()
+                        loadAthletes()
                     } else {
-                        Toast.makeText(context, "Error al cargar atletas", Toast.LENGTH_SHORT).show()
-                        useFallbackData(athletes, adapter)
+                        Toast.makeText(context, "Error al eliminar", Toast.LENGTH_SHORT).show()
                     }
                 }
             } catch (e: Exception) {
                 withContext(Dispatchers.Main) {
-                    Toast.makeText(context, "Fallo de conexión: ${e.message}", Toast.LENGTH_SHORT).show()
-                    useFallbackData(athletes, adapter)
+                    Toast.makeText(context, "Error de red: ${e.message}", Toast.LENGTH_SHORT).show()
                 }
             }
         }
     }
 
-    private fun useFallbackData(athletes: MutableList<Athlete>, adapter: AthletesAdapter) {
-        athletes.clear()
-        athletes.addAll(listOf(
-            Athlete("Ryo Kiyuna", "Kata", "Legendary Gold", "https://via.placeholder.com/150"),
-            Athlete("Douglas Brose", "Kumite -60kg", "Elite Fighter", "https://via.placeholder.com/150"),
-            Athlete("Anzhelika Terliuga", "Kumite -55kg", "Olympic Silver", "https://via.placeholder.com/150"),
-            Athlete("Kuma Master", "All-rounder", "Sensei Rank", "https://via.placeholder.com/150")
-        ))
-        adapter.notifyDataSetChanged()
+    private fun loadAthletes() {
+        lifecycleScope.launch(Dispatchers.IO) {
+            try {
+                val response = RetrofitClient.instance.getAthletes().execute()
+                withContext(Dispatchers.Main) {
+                    if (response.isSuccessful && response.body() != null) {
+                        athletes.clear()
+                        athletes.addAll(response.body()!!)
+                        adapter.clearSelection()
+                        selectedCount = 0
+                        activity?.invalidateOptionsMenu()
+                    } else {
+                        Toast.makeText(context, "Error al cargar atletas", Toast.LENGTH_SHORT).show()
+                    }
+                }
+            } catch (e: Exception) {
+                withContext(Dispatchers.Main) {
+                    Toast.makeText(context, "Fallo de conexión: ${e.message}", Toast.LENGTH_SHORT).show()
+                }
+            }
+        }
     }
 }

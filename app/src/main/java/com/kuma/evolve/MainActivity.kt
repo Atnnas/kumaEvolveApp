@@ -120,6 +120,7 @@ class MainActivity : AppCompatActivity(), NavigationView.OnNavigationItemSelecte
         when (item.itemId) {
             R.id.nav_home -> fragment = HomeFragment()
             R.id.nav_athletes -> fragment = AthletesFragment()
+            R.id.nav_attendance -> fragment = AttendanceFragment()
             R.id.nav_settings -> fragment = SettingsFragment()
             R.id.nav_logout -> {
                 authManager.signOut()
