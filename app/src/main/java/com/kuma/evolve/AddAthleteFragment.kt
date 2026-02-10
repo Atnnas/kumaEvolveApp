@@ -52,6 +52,7 @@ class AddAthleteFragment : Fragment() {
     private lateinit var etGrade: TextInputEditText
     private lateinit var etWeight: TextInputEditText
     private lateinit var btnSave: Button
+    private lateinit var btnEnroll: Button
 
     private var editingAthlete: Athlete? = null
     private var photoUri: Uri? = null
@@ -118,6 +119,7 @@ class AddAthleteFragment : Fragment() {
         etGrade = view.findViewById(R.id.et_grade)
         etWeight = view.findViewById(R.id.et_weight)
         btnSave = view.findViewById(R.id.btn_save_athlete)
+        btnEnroll = view.findViewById(R.id.btn_enroll_face)
 
         // Restoration of UI state after recreation
         photoUri?.let {
@@ -141,7 +143,12 @@ class AddAthleteFragment : Fragment() {
                     }
                 }
             }
+            btnEnroll.visibility = View.VISIBLE
             btnSave.text = "Actualizar Atleta"
+        }
+
+        btnEnroll.setOnClickListener {
+            openEnrollmentCamera()
         }
 
         view.findViewById<View>(R.id.photo_container).setOnClickListener {
@@ -154,6 +161,17 @@ class AddAthleteFragment : Fragment() {
         // --- NEW: Fetch full data if editing ---
         editingAthlete?.let { athlete ->
             loadFullAthleteData(athlete._id!!)
+        }
+    }
+
+    private fun openEnrollmentCamera() {
+        editingAthlete?._id?.let { id ->
+            val intent = android.content.Intent(requireContext(), AttendanceCameraActivity::class.java).apply {
+                putExtra("MODE", "ENROLLMENT")
+                putExtra("ATHLETE_ID", id)
+                putExtra("ATHLETE_NAME", etName.text.toString())
+            }
+            startActivity(intent)
         }
     }
 

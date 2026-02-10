@@ -71,6 +71,13 @@ class AttendanceFragment : Fragment() {
         tvStatFacial = statFacialGroup.findViewById(R.id.tv_stat_value)
 
         btnExportCsv = view.findViewById(R.id.btn_export_csv)
+        
+        // Restaurar vistas originales
+        rvAttendance = view.findViewById(R.id.rv_attendance)
+        btnDateFrom = view.findViewById(R.id.btn_date_from)
+        btnDateTo = view.findViewById(R.id.btn_date_to)
+        spinnerAthleteFilter = view.findViewById(R.id.spinner_athlete_filter)
+        fabAddAttendance = view.findViewById(R.id.fab_add_attendance)
 
         // Setup RecyclerView
         adapter = AttendanceAdapter(attendances)

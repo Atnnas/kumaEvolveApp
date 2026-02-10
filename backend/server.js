@@ -487,11 +487,38 @@ app.post('/api/attendance/recognize', upload.single('image'), async (req, res) =
             recognized: true,
             athleteId: match.athleteId,
             name: match.name,
-            confidence: match.confidence
+            confidence: match.confidence,
+            descriptor: Array.from(capturedDescriptor) // Devolver para enrolamiento
         });
 
     } catch (error) {
         console.error('❌ Error en /api/attendance/recognize:', error);
+        res.status(500).json({ success: false, error: error.message });
+    }
+});
+
+// POST /api/athletes/:id/enroll - Enrolamiento biométrico masivo
+app.post('/api/athletes/:id/enroll', async (req, res) => {
+    try {
+        const { id } = req.params;
+        const { descriptors } = req.body;
+
+        if (!descriptors || !Array.isArray(descriptors) || descriptors.length === 0) {
+            return res.status(400).json({ success: false, message: 'Se requieren descriptores' });
+        }
+
+        // Consolidación: Promedio simple de todos los descriptores capturados
+        const masterDescriptor = descriptors[0].map((_, i) => {
+            let sum = 0;
+            descriptors.forEach(d => sum += d[i]);
+            return sum / descriptors.length;
+        });
+
+        const athlete = await Athlete.findByIdAndUpdate(id, { faceDescriptor: masterDescriptor }, { new: true });
+
+        console.log(`🧬 Enrolamiento Maestro completado para: ${athlete.name} (${descriptors.length} capturas)`);
+        res.status(200).json({ success: true, message: 'Enrolamiento completado' });
+    } catch (error) {
         res.status(500).json({ success: false, error: error.message });
     }
 });

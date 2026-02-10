@@ -130,7 +130,17 @@ interface ApiService {
 
     @GET("/api/attendance/stats")
     fun getAttendanceStats(): Call<AttendanceStats>
+
+    @POST("/api/athletes/{id}/enroll")
+    fun enrollAthlete(
+        @Path("id") id: String,
+        @Body enrollment: EnrollmentRequest
+    ): Call<okhttp3.ResponseBody>
 }
+
+data class EnrollmentRequest(
+    val descriptors: List<List<Double>>
+)
 
 data class AttendanceStats(
     val total: Int,
@@ -146,7 +156,8 @@ data class RecognitionResponse(
     val athleteId: String?,
     val name: String?,
     val confidence: Int?,
-    val message: String? = null
+    val message: String? = null,
+    val descriptor: List<Double>? = null
 )
 
 data class CommonResponse(val success: Boolean, val message: String? = null, val error: String? = null)

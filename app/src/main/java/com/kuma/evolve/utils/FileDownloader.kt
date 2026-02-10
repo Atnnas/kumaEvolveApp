@@ -15,10 +15,12 @@ object FileDownloader {
             val timeStamp = SimpleDateFormat("yyyyMMdd_HHmmss", Locale.getDefault()).format(Date())
             val fileName = "${prefix}_${timeStamp}.csv"
             
-            val downloadsDir = Environment.getExternalStoragePublicProvider(Environment.DIRECTORY_DOWNLOADS)
+            // Usar directorio de descargas público
+            @Suppress("DEPRECATION")
+            val downloadsDir = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS)
             val file = File(downloadsDir, fileName)
             
-            FileOutputStream(file).use { output ->
+            FileOutputStream(file).use { output: FileOutputStream ->
                 output.write(content.toByteArray())
             }
             

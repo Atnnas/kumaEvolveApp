@@ -145,6 +145,20 @@
         </com.google.android.material.textfield.TextInputLayout>
 
         <com.google.android.material.button.MaterialButton
+            android:id="@+id/btn_enroll_face"
+            style="@style/Widget.MaterialComponents.Button.OutlinedButton"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="ENTRENAR ROSTRO (ENROLAMIENTO)"
+            android:textColor="@color/kuma_gold"
+            app:strokeColor="@color/kuma_gold"
+            android:layout_marginBottom="32dp"
+            android:visibility="gone"
+            app:icon="@android:drawable/ic_menu_camera"
+            app:iconTint="@color/kuma_gold"
+            android:textStyle="bold" />
+
+        <com.google.android.material.button.MaterialButton
             android:id="@+id/btn_save_athlete"
             android:layout_width="match_parent"
             android:layout_height="64dp"

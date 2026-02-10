@@ -25,12 +25,22 @@ import java.util.concurrent.ExecutorService
 import java.util.concurrent.Executors
 import okhttp3.MediaType.Companion.toMediaTypeOrNull
 import okhttp3.RequestBody.Companion.toRequestBody
+import androidx.lifecycle.lifecycleScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
+import com.kuma.evolve.network.EnrollmentRequest
 
 class AttendanceCameraActivity : AppCompatActivity() {
 
     private lateinit var previewView: PreviewView
     private lateinit var graphicOverlay: GraphicOverlay
     private lateinit var cameraExecutor: ExecutorService
+    private var isEnrollmentMode = false
+    private var enrollmentAthleteId: String? = null
+    private var enrollmentAthleteName: String? = null
+    private val enrollmentDescriptors = mutableListOf<List<Double>>()
+    private val REQUIRED_ENROLLMENT_COUNT = 10
     private lateinit var tvStatusHint: TextView
     
     private var imageCapture: ImageCapture? = null
@@ -43,6 +53,15 @@ class AttendanceCameraActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_attendance_camera)
+
+        isEnrollmentMode = intent.getStringExtra("MODE") == "ENROLLMENT"
+        enrollmentAthleteId = intent.getStringExtra("ATHLETE_ID")
+        enrollmentAthleteName = intent.getStringExtra("ATHLETE_NAME")
+
+        if (isEnrollmentMode) {
+            findViewById<com.google.android.material.button.MaterialButton>(R.id.btn_manual_mode).visibility = android.view.View.VISIBLE
+            findViewById<com.google.android.material.button.MaterialButton>(R.id.btn_manual_mode).text = "CANCELAR ENROLAMIENTO"
+        }
 
         previewView = findViewById(R.id.preview_view)
         graphicOverlay = findViewById(R.id.graphic_overlay)
@@ -139,14 +158,19 @@ class AttendanceCameraActivity : AppCompatActivity() {
         com.kuma.evolve.network.RetrofitClient.instance.recognizeFace(body).enqueue(object : retrofit2.Callback<com.kuma.evolve.network.RecognitionResponse> {
             override fun onResponse(call: retrofit2.Call<com.kuma.evolve.network.RecognitionResponse>, response: retrofit2.Response<com.kuma.evolve.network.RecognitionResponse>) {
                 if (response.isSuccessful && response.body() != null) {
-                    showRecognitionResult(response.body()!!)
+                    val res = response.body()!!
+                    if (isEnrollmentMode && res.descriptor != null) {
+                        handleEnrollmentDescriptor(res.descriptor)
+                    } else if (!isEnrollmentMode) {
+                        showRecognitionResult(res)
+                    }
                 } else {
-                    tvStatusHint.text = "Error en el servidor"
+                    if (!isEnrollmentMode) tvStatusHint.text = "Error en el servidor"
                 }
             }
 
             override fun onFailure(call: retrofit2.Call<com.kuma.evolve.network.RecognitionResponse>, t: Throwable) {
-                tvStatusHint.text = "Error de conexión"
+                if (!isEnrollmentMode) tvStatusHint.text = "Error de conexión"
             }
         })
     }
@@ -154,6 +178,52 @@ class AttendanceCameraActivity : AppCompatActivity() {
     private var isScanPaused = false
     private var lastRecognizedId: String? = null
     private var faceWasPresent = false
+    private var enrollmentCount = 0
+
+    private fun handleEnrollmentDescriptor(descriptor: List<Double>) {
+        if (enrollmentCount >= REQUIRED_ENROLLMENT_COUNT) return
+        
+        enrollmentDescriptors.add(descriptor)
+        enrollmentCount++
+        
+        runOnUiThread {
+            tvStatusHint.text = "ENTRENANDO: $enrollmentCount / $REQUIRED_ENROLLMENT_COUNT\n(MUEVA LIGERAMENTE LA CABEZA)"
+            tvStatusHint.setTextColor(getColor(R.color.kuma_gold))
+            
+            if (enrollmentCount >= REQUIRED_ENROLLMENT_COUNT) {
+                finalizeEnrollment()
+            }
+        }
+    }
+
+    private fun finalizeEnrollment() {
+        isScanPaused = true
+        tvStatusHint.text = "CONSOLIDANDO ADN FACIAL..."
+        
+        lifecycleScope.launch(Dispatchers.IO) {
+            try {
+                val enrollmentReq = EnrollmentRequest(enrollmentDescriptors)
+                val response = com.kuma.evolve.network.RetrofitClient.instance.enrollAthlete(
+                    enrollmentAthleteId!!, enrollmentReq
+                ).execute()
+                
+                withContext(Dispatchers.Main) {
+                    if (response.isSuccessful) {
+                        Toast.makeText(this@AttendanceCameraActivity, "¡ENTRENAMIENTO COMPLETADO!", Toast.LENGTH_LONG).show()
+                        finish()
+                    } else {
+                        Toast.makeText(this@AttendanceCameraActivity, "Error en enrolamiento", Toast.LENGTH_SHORT).show()
+                        finish()
+                    }
+                }
+            } catch (e: Exception) {
+                withContext(Dispatchers.Main) {
+                    Toast.makeText(this@AttendanceCameraActivity, "Error de red", Toast.LENGTH_SHORT).show()
+                    finish()
+                }
+            }
+        }
+    }
 
     // Called from FaceAnalyzer when presence changes
     fun onFacePresenceChanged(present: Boolean) {
