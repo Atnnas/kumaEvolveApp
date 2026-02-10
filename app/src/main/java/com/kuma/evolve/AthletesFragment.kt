@@ -134,6 +134,7 @@ class AthletesFragment : Fragment() {
                         athletes.clear()
                         athletes.addAll(response.body()!!)
                         adapter.clearSelection()
+                        adapter.notifyDataSetChanged() // 🥋 IMPORTANTE: Notificar al adaptador
                         selectedCount = 0
                         activity?.invalidateOptionsMenu()
                     } else {

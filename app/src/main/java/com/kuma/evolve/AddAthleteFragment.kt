@@ -300,12 +300,19 @@ class AddAthleteFragment : Fragment() {
                 
                 withContext(Dispatchers.Main) {
                     if (response.isSuccessful) {
-                        Toast.makeText(context, "ÉXITO: Atleta guardado 🥋✅", Toast.LENGTH_LONG).show()
+                        Toast.makeText(context, "¡GUERRERO REGISTRADO! 🥋✅", Toast.LENGTH_LONG).show()
                         parentFragmentManager.popBackStack()
                     } else {
-                        val errorStr = response.errorBody()?.string() ?: "Error de red"
-                        android.util.Log.e("AddAthlete", "Fallo Servidor: $errorStr")
-                        throw Exception("Servidor rechazó la foto: $errorStr")
+                        val errorBody = response.errorBody()?.string() ?: ""
+                        val errorMessage = if (errorBody.contains("cédula ya está registrada")) {
+                            "ESTA CÉDULA YA PERTENECE A OTRO GUERRERO 🛡️"
+                        } else {
+                            "EL DOJO RECHAZÓ EL REGISTRO: $errorBody"
+                        }
+                        android.util.Log.e("AddAthlete", "Fallo Servidor: $errorBody")
+                        Toast.makeText(context, "⚠️ $errorMessage", Toast.LENGTH_LONG).show()
+                        btnSave.isEnabled = true
+                        btnSave.text = if (editingAthlete != null) "Actualizar Atleta" else "Guardar Atleta"
                     }
                 }
             } catch (t: Throwable) {
@@ -313,13 +320,14 @@ class AddAthleteFragment : Fragment() {
                 withContext(Dispatchers.Main) {
                     val msg = when(t) {
                         is OutOfMemoryError -> "MEMORIA INSUFICIENTE: Foto demasiado grande"
-                        else -> t.message ?: "Error desconocido"
+                        else -> "FALLO DE CONEXIÓN: Verifique su internet 📡"
                     }
-                    Toast.makeText(context, "⚠️ ERROR: $msg", Toast.LENGTH_LONG).show()
+                    Toast.makeText(context, "⚠️ $msg", Toast.LENGTH_LONG).show()
                     btnSave.isEnabled = true
                     btnSave.text = if (editingAthlete != null) "Actualizar Atleta" else "Guardar Atleta"
                 }
-            } finally {
+            }
+ finally {
                 // Garbage Collection hint for extreme devices
                 System.gc()
             }
