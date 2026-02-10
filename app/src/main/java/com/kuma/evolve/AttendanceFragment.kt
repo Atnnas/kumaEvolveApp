@@ -41,6 +41,11 @@ class AttendanceFragment : Fragment() {
     private var dateTo: Date? = null
     private var selectedAthleteId: String? = null
 
+    private lateinit var btnExportCsv: View
+    private lateinit var tvStatTotal: android.widget.TextView
+    private lateinit var tvStatToday: android.widget.TextView
+    private lateinit var tvStatFacial: android.widget.TextView
+
     override fun onCreateView(
         inflater: LayoutInflater,
         container: ViewGroup?,
@@ -52,11 +57,20 @@ class AttendanceFragment : Fragment() {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
-        rvAttendance = view.findViewById(R.id.rv_attendance)
-        btnDateFrom = view.findViewById(R.id.btn_date_from)
-        btnDateTo = view.findViewById(R.id.btn_date_to)
-        spinnerAthleteFilter = view.findViewById(R.id.spinner_athlete_filter)
-        fabAddAttendance = view.findViewById(R.id.fab_add_attendance)
+        // Initialize Stats Views
+        val statTotalGroup = view.findViewById<View>(R.id.stat_total)
+        val statTodayGroup = view.findViewById<View>(R.id.stat_today)
+        val statFacialGroup = view.findViewById<View>(R.id.stat_facial)
+
+        statTotalGroup.findViewById<android.widget.TextView>(R.id.tv_stat_label).text = "TOTAL"
+        statTodayGroup.findViewById<android.widget.TextView>(R.id.tv_stat_label).text = "HOY"
+        statFacialGroup.findViewById<android.widget.TextView>(R.id.tv_stat_label).text = "FACIAL"
+
+        tvStatTotal = statTotalGroup.findViewById(R.id.tv_stat_value)
+        tvStatToday = statTodayGroup.findViewById(R.id.tv_stat_value)
+        tvStatFacial = statFacialGroup.findViewById(R.id.tv_stat_value)
+
+        btnExportCsv = view.findViewById(R.id.btn_export_csv)
 
         // Setup RecyclerView
         adapter = AttendanceAdapter(attendances)
@@ -66,11 +80,59 @@ class AttendanceFragment : Fragment() {
         // Setup listeners
         btnDateFrom.setOnClickListener { showDatePickerFrom() }
         btnDateTo.setOnClickListener { showDatePickerTo() }
+        btnExportCsv.setOnClickListener { exportAttendance() }
         fabAddAttendance.setOnClickListener { openAttendanceCamera() }
 
         // Load initial data
         loadAthletes()
         loadAttendances()
+        loadStats()
+    }
+
+    private fun loadStats() {
+        lifecycleScope.launch(Dispatchers.IO) {
+            try {
+                val response = RetrofitClient.instance.getAttendanceStats().execute()
+                withContext(Dispatchers.Main) {
+                    if (response.isSuccessful && response.body() != null) {
+                        val stats = response.body()!!
+                        tvStatTotal.text = stats.total.toString()
+                        tvStatToday.text = stats.today.toString()
+                        tvStatFacial.text = "${stats.facialPercentage}%"
+                    }
+                }
+            } catch (e: Exception) {
+                android.util.Log.e("Attendance", "Error loading stats", e)
+            }
+        }
+    }
+
+    private fun exportAttendance() {
+        lifecycleScope.launch(Dispatchers.IO) {
+            try {
+                val fromParam = dateFrom?.let { SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).format(it) }
+                val toParam = dateTo?.let { SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).format(it) }
+                
+                val response = RetrofitClient.instance.exportAttendance(
+                    from = fromParam,
+                    to = toParam,
+                    athleteId = selectedAthleteId
+                ).execute()
+
+                withContext(Dispatchers.Main) {
+                    if (response.isSuccessful && response.body() != null) {
+                        val csvContent = response.body()!!.string()
+                        com.kuma.evolve.utils.FileDownloader.saveCsv(requireContext(), csvContent)
+                    } else {
+                        Toast.makeText(context, "Error al generar reporte", Toast.LENGTH_SHORT).show()
+                    }
+                }
+            } catch (e: Exception) {
+                withContext(Dispatchers.Main) {
+                    Toast.makeText(context, "Error: ${e.message}", Toast.LENGTH_SHORT).show()
+                }
+            }
+        }
     }
 
     private fun loadAthletes() {

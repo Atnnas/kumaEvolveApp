@@ -93,8 +93,15 @@ function findBestMatch(capturedDescriptor, athleteDescriptors) {
     };
 }
 
+// Promediar descriptores para "entrenar" el sistema progresivamente
+function mergeDescriptors(oldDescriptor, newDescriptor, alpha = 0.1) {
+    if (!oldDescriptor || !newDescriptor) return oldDescriptor || newDescriptor;
+    return oldDescriptor.map((val, i) => (val * (1 - alpha)) + (newDescriptor[i] * alpha));
+}
+
 module.exports = {
     initFaceApi,
     getDescriptor,
-    findBestMatch
+    findBestMatch,
+    mergeDescriptors
 };

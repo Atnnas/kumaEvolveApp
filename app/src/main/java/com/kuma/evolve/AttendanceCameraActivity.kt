@@ -152,9 +152,24 @@ class AttendanceCameraActivity : AppCompatActivity() {
     }
 
     private var isScanPaused = false
+    private var lastRecognizedId: String? = null
+    private var faceWasPresent = false
+
+    // Called from FaceAnalyzer when presence changes
+    fun onFacePresenceChanged(present: Boolean) {
+        if (!present && faceWasPresent) {
+            // Face left the camera
+            Log.d("AttendanceCam", "👤 El rostro se retiró. Reiniciando escáner.")
+            lastRecognizedId = null
+            isScanPaused = false
+            tvStatusHint.text = "ESPERANDO ATLETA..."
+            tvStatusHint.setTextColor(getColor(R.color.kuma_white))
+        }
+        faceWasPresent = present
+    }
 
     private fun showRecognitionResult(result: com.kuma.evolve.network.RecognitionResponse) {
-        if (isScanPaused) return
+        if (isScanPaused || lastRecognizedId == result.athleteId) return
 
         if (result.recognized) {
             tvStatusHint.text = "✅ RECONOCIDO: ${result.name}"
@@ -165,21 +180,19 @@ class AttendanceCameraActivity : AppCompatActivity() {
         } else {
             tvStatusHint.text = "👤 ROSTRO NO RECONOCIDO"
             tvStatusHint.setTextColor(getColor(R.color.kuma_red))
-            // Continuous scanning will naturally resume as we don't pause here for errors
         }
     }
 
     private fun submitAttendance(athleteId: String?, name: String?, mode: String) {
-        if (athleteId == null) return
+        if (athleteId == null || isScanPaused) return
         
-        isScanPaused = true // Pause to avoid double registrations
+        isScanPaused = true 
+        lastRecognizedId = athleteId // Memory to avoid double scans of same person
         
         val athleteIdBody = athleteId.toRequestBody("text/plain".toMediaTypeOrNull())
         val nameBody = name?.toRequestBody("text/plain".toMediaTypeOrNull()) ?: "Desconocido".toRequestBody("text/plain".toMediaTypeOrNull())
         val modeBody = mode.toRequestBody("text/plain".toMediaTypeOrNull())
         
-        // We'll use a dummy multi-part for the image as the backend expects it, 
-        // but for high speed we could optimize it later.
         val emptyPart = okhttp3.MultipartBody.Part.createFormData("image", "none.jpg", ByteArray(0).toRequestBody("image/jpeg".toMediaTypeOrNull()))
 
         com.kuma.evolve.network.RetrofitClient.instance.registerAttendance(
@@ -188,23 +201,30 @@ class AttendanceCameraActivity : AppCompatActivity() {
             override fun onResponse(call: retrofit2.Call<com.kuma.evolve.network.AttendanceResponse>, response: retrofit2.Response<com.kuma.evolve.network.AttendanceResponse>) {
                 if (response.isSuccessful) {
                     Toast.makeText(this@AttendanceCameraActivity, "Asistencia: $name", Toast.LENGTH_SHORT).show()
+                    tvStatusHint.text = "✅ REGISTRADO: $name"
+                } else {
+                    // Check for duplicate message from server
+                    try {
+                        val errorBody = response.errorBody()?.string()
+                        if (errorBody?.contains("YA_REGISTRADO") == true) {
+                            tvStatusHint.text = "⚠️ YA REGISTRADO HOY: $name"
+                            tvStatusHint.setTextColor(getColor(R.color.kuma_red))
+                        } else {
+                            tvStatusHint.text = "Error al registrar"
+                        }
+                    } catch (e: Exception) {
+                        tvStatusHint.text = "Error en el servidor"
+                    }
                 }
-                resetScannerAfterDelay()
+                // We keep isScanPaused = true until they leave the camera
+                Log.d("AttendanceCam", "Registro completado. Esperando a que el rostro se retire.")
             }
 
             override fun onFailure(call: retrofit2.Call<com.kuma.evolve.network.AttendanceResponse>, t: Throwable) {
                 tvStatusHint.text = "Error de conexión"
-                resetScannerAfterDelay()
+                isScanPaused = false // Retry on connection failure
             }
         })
-    }
-
-    private fun resetScannerAfterDelay() {
-        android.os.Handler(android.os.Looper.getMainLooper()).postDelayed({
-            isScanPaused = false
-            tvStatusHint.text = "Esperando atleta..."
-            tvStatusHint.setTextColor(getColor(R.color.kuma_white))
-        }, 3000) // 3 seconds cooldown
     }
 
     private fun openManualRegistration() {
@@ -254,13 +274,16 @@ class AttendanceCameraActivity : AppCompatActivity() {
                 detector.process(image)
                     .addOnSuccessListener { faces ->
                         overlay.clear()
+                        
+                        val activity = overlay.context as? AttendanceCameraActivity
+                        activity?.onFacePresenceChanged(faces.isNotEmpty())
+
                         for (face in faces) {
                             overlay.add(FaceGraphic(overlay, face))
                             
-                            // Trigger recognition if not paused
+                            // Trigger recognition if faces are present and we are not recently matched
                             if (faces.isNotEmpty()) {
-                                // For speed, we use the analyzer directly to send to recognition
-                                (overlay.context as? AttendanceCameraActivity)?.takePhoto()
+                                activity?.takePhoto()
                             }
                         }
                     }

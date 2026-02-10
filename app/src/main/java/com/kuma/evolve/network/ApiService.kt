@@ -120,7 +120,25 @@ interface ApiService {
     fun recognizeFace(
         @Part image: MultipartBody.Part
     ): Call<RecognitionResponse>
+
+    @GET("/api/attendance/export")
+    fun exportAttendance(
+        @Query("from") from: String?,
+        @Query("to") to: String?,
+        @Query("athleteId") athleteId: String?
+    ): Call<okhttp3.ResponseBody>
+
+    @GET("/api/attendance/stats")
+    fun getAttendanceStats(): Call<AttendanceStats>
 }
+
+data class AttendanceStats(
+    val total: Int,
+    val facial: Int,
+    val visitors: Int,
+    val today: Int,
+    val facialPercentage: Int
+)
 
 data class RecognitionResponse(
     val success: Boolean,

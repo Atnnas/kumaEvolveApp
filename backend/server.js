@@ -305,6 +305,23 @@ app.post('/api/attendance', upload.single('image'), async (req, res) => {
         // Determinar si es visitante
         const isVisitor = !athleteId || athleteId === 'null';
 
+        // --- PROTECCIÓN CONTRA DUPLICADOS ---
+        if (!isVisitor) {
+            const alreadyRegistered = await Attendance.findOne({
+                athleteRef: athleteId,
+                timestamp: { $gte: startOfDay, $lte: endOfDay }
+            });
+
+            if (alreadyRegistered) {
+                console.log(`⚠️ Atleta ya registrado hoy: ${studentName}`);
+                return res.status(400).json({
+                    success: false,
+                    message: 'YA_REGISTRADO',
+                    error: 'Este atleta ya marcó asistencia el día de hoy.'
+                });
+            }
+        }
+
         const attendanceData = {
             attendanceNumber,
             timestamp: new Date(),
@@ -448,6 +465,23 @@ app.post('/api/attendance/recognize', upload.single('image'), async (req, res) =
         }
 
         console.log(`✅ Atleta reconocido: ${match.name} (${match.confidence}%)`);
+
+        // --- ENTRENAMIENTO FACIAL PROGRESIVO ---
+        // Si el reconocimiento es muy confiable, usamos el nuevo descriptor para afinar la BD
+        if (match.confidence > 90) {
+            try {
+                const athlete = await Athlete.findById(match.athleteId);
+                if (athlete && athlete.faceDescriptor) {
+                    const refinedDescriptor = FaceService.mergeDescriptors(athlete.faceDescriptor, capturedDescriptor, 0.05); // Alpha 5%
+                    athlete.faceDescriptor = refinedDescriptor;
+                    await athlete.save();
+                    console.log(`🧠 Refinando descriptor facial para: ${athlete.name} (Auto-entrenamiento)`);
+                }
+            } catch (err) {
+                console.error('❌ Error en auto-entrenamiento:', err.message);
+            }
+        }
+
         res.status(200).json({
             success: true,
             recognized: true,
@@ -462,35 +496,75 @@ app.post('/api/attendance/recognize', upload.single('image'), async (req, res) =
     }
 });
 
+app.get('/api/attendance/export', async (req, res) => {
+    try {
+        const { from, to, athleteId } = req.query;
+        const filter = {};
+        if (from || to) {
+            filter.timestamp = {};
+            if (from) filter.timestamp.$gte = new Date(from);
+            if (to) {
+                const endDate = new Date(to);
+                endDate.setHours(23, 59, 59, 999);
+                filter.timestamp.$lte = endDate;
+            }
+        }
+        if (athleteId && athleteId !== 'all') filter.athleteRef = athleteId;
+
+        const attendances = await Attendance.find(filter).populate('athleteRef', 'name idCard').sort({ timestamp: -1 });
+
+        let csv = 'Numero;Fecha;Hora;Atleta;ID Atleta;Modo;Visitante\n';
+        attendances.forEach(att => {
+            const date = att.timestamp.toLocaleDateString('es-CR');
+            const time = att.timestamp.toLocaleTimeString('es-CR');
+            const name = att.athleteRef ? att.athleteRef.name : att.studentName;
+            const id = att.athleteRef ? att.athleteRef.idCard : 'N/A';
+            const mode = att.registrationMode === 'facial' ? 'Facial' : 'Manual';
+            const visitor = att.isVisitor ? 'SI' : 'NO';
+            csv += `${att.attendanceNumber};${date};${time};${name};${id};${mode};${visitor}\n`;
+        });
+
+        res.set('Content-Type', 'text/csv');
+        res.status(200).send(csv);
+    } catch (error) {
+        res.status(500).json({ success: false, error: error.message });
+    }
+});
+
+app.get('/api/attendance/stats', async (req, res) => {
+    try {
+        const total = await Attendance.countDocuments();
+        const facial = await Attendance.countDocuments({ registrationMode: 'facial' });
+        const visitors = await Attendance.countDocuments({ isVisitor: true });
+        const startOfDay = new Date();
+        startOfDay.setHours(0, 0, 0, 0);
+        const today = await Attendance.countDocuments({ timestamp: { $gte: startOfDay } });
+        res.status(200).json({
+            total, facial, visitors, today,
+            facialPercentage: total > 0 ? Math.round((facial / total) * 100) : 0
+        });
+    } catch (error) {
+        res.status(500).json({ success: false, error: error.message });
+    }
+});
+
 app.listen(PORT, '0.0.0.0', async () => {
     console.log(`🚀 Servidor corriendo en http://localhost:${PORT}`);
-
-    // Auto-poblar descriptores faciales faltantes al iniciar
     try {
-        console.log("⚙️ Verificando descriptores faciales de atletas...");
+        console.log("⚙️ Verificando descriptores faciales...");
         const athletesMissing = await Athlete.find({ faceDescriptor: null, imageUrl: { $ne: null } });
         if (athletesMissing.length > 0) {
-            console.log(`🔍 Encontrados ${athletesMissing.length} atletas sin descriptores. Procesando...`);
             for (const athlete of athletesMissing) {
-                try {
-                    const base64Data = athlete.imageUrl.split(',')[1];
-                    if (base64Data) {
-                        const buffer = Buffer.from(base64Data, 'base64');
-                        const descriptor = await FaceService.getDescriptor(buffer);
-                        if (descriptor) {
-                            athlete.faceDescriptor = Array.from(descriptor);
-                            await athlete.save();
-                            console.log(`✅ Descriptor generado para: ${athlete.name}`);
-                        }
+                const base64Data = athlete.imageUrl.split(',')[1];
+                if (base64Data) {
+                    const buffer = Buffer.from(base64Data, 'base64');
+                    const descriptor = await FaceService.getDescriptor(buffer);
+                    if (descriptor) {
+                        athlete.faceDescriptor = Array.from(descriptor);
+                        await athlete.save();
                     }
-                } catch (e) {
-                    console.error(`❌ Error procesando ${athlete.name}:`, e.message);
                 }
             }
-        } else {
-            console.log("✅ Todos los atletas tienen descriptores faciales.");
         }
-    } catch (err) {
-        console.error("❌ Error en auto-población:", err.message);
-    }
+    } catch (err) { console.error("❌ Error en auto-población:", err.message); }
 });
