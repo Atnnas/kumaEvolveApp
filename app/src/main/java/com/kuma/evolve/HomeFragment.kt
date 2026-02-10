@@ -36,26 +36,42 @@ class HomeFragment : Fragment() {
 
         authManager = AuthManager(requireContext())
         val logoCard = view.findViewById<View>(R.id.logo_card)
+        val textEvolve = view.findViewById<View>(R.id.text_evolve)
+        val textDojo = view.findViewById<View>(R.id.text_dojo)
+        val cardLogin = view.findViewById<View>(R.id.card_login)
+        val btnLogin = view.findViewById<View>(R.id.btn_google_login)
 
-        // Logo Animation: Heartbeat
-        val scaleX = PropertyValuesHolder.ofFloat(View.SCALE_X, 1.0f, 1.08f)
-        val scaleY = PropertyValuesHolder.ofFloat(View.SCALE_Y, 1.0f, 1.08f)
+        // Premium Entry Animations
+        logoCard.alpha = 0f
+        textEvolve.alpha = 0f
+        textDojo.alpha = 0f
+        cardLogin.alpha = 0f
+        cardLogin.translationY = 100f
+
+        logoCard.animate().alpha(1f).scaleX(1f).scaleY(1f).setDuration(1000).setStartDelay(200).start()
+        textEvolve.animate().alpha(1f).setDuration(800).setStartDelay(600).start()
+        textDojo.animate().alpha(0.7f).setDuration(800).setStartDelay(800).start()
+        cardLogin.animate().alpha(1f).translationY(0f).setDuration(1000).setStartDelay(1000).setInterpolator(AccelerateDecelerateInterpolator()).start()
+
+        // Logo Continuous Animation: Premium Breathing
+        val scaleX = PropertyValuesHolder.ofFloat(View.SCALE_X, 1.0f, 1.04f)
+        val scaleY = PropertyValuesHolder.ofFloat(View.SCALE_Y, 1.0f, 1.04f)
         
         ObjectAnimator.ofPropertyValuesHolder(logoCard, scaleX, scaleY).apply {
-            duration = 1200
+            duration = 2000
             repeatCount = ObjectAnimator.INFINITE
             repeatMode = ObjectAnimator.REVERSE
             interpolator = AccelerateDecelerateInterpolator()
+            startDelay = 1200
             start()
         }
 
-        val btnLogin = view.findViewById<View>(R.id.btn_google_login)
         val credentialManager = CredentialManager.create(requireContext())
 
         fun updateUI() {
             val user = authManager.currentUser
             if (user != null) {
-                btnLogin.visibility = View.GONE
+                cardLogin.visibility = View.GONE
                 (activity as? MainActivity)?.updateNavHeader()
             } else {
                 btnLogin.visibility = View.VISIBLE

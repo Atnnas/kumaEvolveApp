@@ -1,9 +1,8 @@
-<?xml version="1.0" encoding="utf-8"?>
 <ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="@color/kuma_white">
+    android:background="?android:attr/windowBackground">
 
     <LinearLayout
         android:layout_width="match_parent"
@@ -48,7 +47,7 @@
                 android:layout_gravity="bottom|end"
                 app:cardBackgroundColor="@color/kuma_gold"
                 app:cardCornerRadius="18dp"
-                app:cardElevation="4dp">
+                app:cardElevation="6dp">
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
@@ -60,18 +59,20 @@
             </com.google.android.material.card.MaterialCardView>
         </FrameLayout>
 
+        <!-- Form Fields with Dual Mode Theme -->
         <com.google.android.material.textfield.TextInputLayout
             style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:hint="Cédula"
-            app:boxStrokeColor="@color/kuma_brown"
-            app:hintTextColor="@color/kuma_brown"
+            app:boxStrokeColor="@color/kuma_gold"
+            app:hintTextColor="@color/kuma_gold"
             android:layout_marginBottom="16dp">
             <com.google.android.material.textfield.TextInputEditText
                 android:id="@+id/et_id_card"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
+                android:textColor="?attr/colorOnSurface"
                 android:inputType="text" />
         </com.google.android.material.textfield.TextInputLayout>
 
@@ -80,13 +81,14 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:hint="Nombre Completo"
-            app:boxStrokeColor="@color/kuma_brown"
-            app:hintTextColor="@color/kuma_brown"
+            app:boxStrokeColor="@color/kuma_gold"
+            app:hintTextColor="@color/kuma_gold"
             android:layout_marginBottom="16dp">
             <com.google.android.material.textfield.TextInputEditText
                 android:id="@+id/et_name"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
+                android:textColor="?attr/colorOnSurface"
                 android:inputType="textPersonName" />
         </com.google.android.material.textfield.TextInputLayout>
 
@@ -95,8 +97,8 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:hint="Fecha de Nacimiento"
-            app:boxStrokeColor="@color/kuma_brown"
-            app:hintTextColor="@color/kuma_brown"
+            app:boxStrokeColor="@color/kuma_gold"
+            app:hintTextColor="@color/kuma_gold"
             android:layout_marginBottom="16dp"
             app:endIconMode="custom"
             app:endIconDrawable="@android:drawable/ic_menu_my_calendar">
@@ -104,6 +106,7 @@
                 android:id="@+id/et_birth_date"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
+                android:textColor="?attr/colorOnSurface"
                 android:inputType="none"
                 android:focusable="false"
                 android:clickable="true" />
@@ -114,13 +117,14 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:hint="Grado (Dan/Kyu)"
-            app:boxStrokeColor="@color/kuma_brown"
-            app:hintTextColor="@color/kuma_brown"
+            app:boxStrokeColor="@color/kuma_gold"
+            app:hintTextColor="@color/kuma_gold"
             android:layout_marginBottom="16dp">
             <com.google.android.material.textfield.TextInputEditText
                 android:id="@+id/et_grade"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
+                android:textColor="?attr/colorOnSurface"
                 android:inputType="text" />
         </com.google.android.material.textfield.TextInputLayout>
 
@@ -129,28 +133,27 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:hint="Peso (Kg)"
-            app:boxStrokeColor="@color/kuma_brown"
-            app:hintTextColor="@color/kuma_brown"
+            app:boxStrokeColor="@color/kuma_gold"
+            app:hintTextColor="@color/kuma_gold"
             android:layout_marginBottom="32dp">
             <com.google.android.material.textfield.TextInputEditText
                 android:id="@+id/et_weight"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
+                android:textColor="?attr/colorOnSurface"
                 android:inputType="numberDecimal" />
         </com.google.android.material.textfield.TextInputLayout>
-
 
         <com.google.android.material.button.MaterialButton
             android:id="@+id/btn_save_athlete"
             android:layout_width="match_parent"
             android:layout_height="64dp"
             android:text="GUARDAR ATLETA"
-            app:backgroundTint="@color/kuma_black"
-            android:textColor="@color/kuma_gold"
+            app:backgroundTint="@color/kuma_red"
+            android:textColor="@color/kuma_white"
             android:letterSpacing="0.1"
             app:cornerRadius="12dp"
-            app:strokeColor="@color/kuma_gold"
-            app:strokeWidth="1dp"
+            app:elevation="8dp"
             android:textStyle="bold" />
 
     </LinearLayout>

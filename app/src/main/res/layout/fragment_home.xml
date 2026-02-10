@@ -1,24 +1,24 @@
-<?xml version="1.0" encoding="utf-8"?>
 <androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="@color/kuma_black">
+    android:background="?android:attr/windowBackground">
 
     <com.google.android.material.card.MaterialCardView
         android:id="@+id/logo_card"
         android:layout_width="280dp"
         android:layout_height="280dp"
         app:shapeAppearanceOverlay="@style/ShapeAppearance.KumaEvolve.Circle"
-        app:cardElevation="32dp"
+        app:cardElevation="24dp"
         app:cardBackgroundColor="@color/kuma_black"
-        app:strokeWidth="4dp"
+        app:strokeWidth="3dp"
         app:strokeColor="@color/kuma_gold"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
+        android:layout_marginTop="80dp"
         app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintVertical_bias="0.4">
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintVertical_bias="0.2">
 
         <ImageView
             android:id="@+id/imageViewLogo"
@@ -38,7 +38,7 @@
         android:textSize="36sp"
         android:textStyle="bold"
         android:letterSpacing="0.4"
-        android:layout_marginTop="24dp"
+        android:layout_marginTop="32dp"
         app:layout_constraintTop_toBottomOf="@id/logo_card"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent" />
@@ -48,30 +48,57 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:text="KUMA DOJO • COSTA RICA"
-        android:textColor="@color/kuma_white"
+        android:textColor="?attr/colorOnSurface"
         android:textSize="12sp"
+        android:alpha="0.7"
         android:letterSpacing="0.5"
         android:layout_marginTop="4dp"
         app:layout_constraintTop_toBottomOf="@id/text_evolve"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent" />
 
-    <com.google.android.material.button.MaterialButton
-        android:id="@+id/btn_google_login"
-        android:layout_width="wrap_content"
+    <!-- Premium Login Section with Depth -->
+    <com.google.android.material.card.MaterialCardView
+        android:id="@+id/card_login"
+        android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_marginTop="48dp"
-        android:text="Acceder con Google"
-        android:textAllCaps="false"
-        android:textColor="@color/kuma_black"
-        android:paddingStart="24dp"
-        android:paddingEnd="24dp"
-        app:cornerRadius="12dp"
-        app:icon="@android:drawable/ic_menu_search"
-        app:iconPadding="12dp"
-        app:backgroundTint="@color/kuma_white"
-        app:layout_constraintTop_toBottomOf="@id/text_dojo"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintEnd_toEndOf="parent" />
+        android:layout_margin="32dp"
+        app:cardElevation="8dp"
+        app:cardCornerRadius="24dp"
+        app:cardBackgroundColor="?attr/colorSurface"
+        app:strokeColor="@color/kuma_gold"
+        app:strokeWidth="1dp"
+        app:layout_constraintBottom_toBottomOf="parent"
+        android:layout_marginEnd="24dp"
+        android:layout_marginStart="24dp"
+        android:layout_marginBottom="64dp">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:padding="24dp"
+            android:gravity="center">
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btn_google_login"
+                style="@style/Widget.MaterialComponents.Button.UnelevatedButton"
+                android:layout_width="match_parent"
+                android:layout_height="60dp"
+                android:text="ACCEDER CON GOOGLE"
+                android:textAllCaps="false"
+                android:textColor="@color/kuma_black"
+                android:textStyle="bold"
+                android:letterSpacing="0.1"
+                app:cornerRadius="16dp"
+                app:icon="@android:drawable/ic_menu_search"
+                app:iconPadding="12dp"
+                app:iconTint="@color/kuma_black"
+                app:backgroundTint="@color/kuma_white"
+                app:strokeColor="@color/kuma_gold"
+                app:strokeWidth="1dp" />
+
+        </LinearLayout>
+    </com.google.android.material.card.MaterialCardView>
 
 </androidx.constraintlayout.widget.ConstraintLayout>

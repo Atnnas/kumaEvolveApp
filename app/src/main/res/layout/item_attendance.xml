@@ -12,7 +12,7 @@
     app:cardCornerRadius="12dp"
     app:strokeColor="@color/kuma_gold"
     app:strokeWidth="1dp"
-    app:cardBackgroundColor="@color/kuma_white">
+    app:cardBackgroundColor="?attr/colorSurface">
 
     <LinearLayout
         android:layout_width="match_parent"
@@ -48,7 +48,7 @@
                 android:layout_height="wrap_content"
                 android:textSize="18sp"
                 android:textStyle="bold"
-                android:textColor="@color/kuma_black"
+                android:textColor="?attr/colorOnSurface"
                 android:letterSpacing="0.02" />
 
             <!-- Time & Mode -->
@@ -64,7 +64,7 @@
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:textSize="13sp"
-                    android:textColor="#757575" />
+                    android:textColor="?android:attr/textColorSecondary" />
 
                 <TextView
                     android:id="@+id/tv_attendance_mode"
@@ -97,7 +97,6 @@
 
         </LinearLayout>
 
-        <!-- Attendance Number in a Gold/Red accent circle would be too much, let's keep it elegant -->
         <TextView
             android:id="@+id/tv_attendance_number"
             android:layout_width="wrap_content"

@@ -1,5 +1,5 @@
 <resources xmlns:tools="http://schemas.android.com/tools">
-    <!-- Base application theme. -->
+    <!-- Base application theme for Dark Mode. -->
     <style name="Theme.KumaEvolveApp" parent="Theme.MaterialComponents.DayNight.NoActionBar">
         <!-- Primary brand color. -->
         <item name="colorPrimary">@color/kuma_red</item>
@@ -11,15 +11,13 @@
         <item name="colorSecondaryVariant">@color/kuma_gold_light</item>
         <item name="colorOnSecondary">@color/kuma_black</item>
 
-        <!-- UI Elements -->
+        <!-- UI Elements for Dark Mode -->
         <item name="android:statusBarColor">@color/kuma_black</item>
-        <item name="android:windowBackground">@color/kuma_white</item>
+        <item name="android:windowBackground">@color/kuma_black</item>
         <item name="android:navigationBarColor">@color/kuma_black</item>
-        <item name="colorSurface">@color/kuma_white</item>
-        <item name="colorOnSurface">@color/kuma_black</item>
-    </style>
-
-    <style name="CircularShapeAppearance" parent="ShapeAppearance.MaterialComponents.SmallComponent">
-        <item name="cornerSize">50%</item>
+        <item name="colorSurface">#1E1E1E</item>
+        <item name="colorOnSurface">@color/kuma_white</item>
+        <item name="android:textColorPrimary">@color/kuma_white</item>
+        <item name="android:textColorSecondary">@color/kuma_gold</item>
     </style>
 </resources>
