@@ -1,0 +1,22 @@
+<resources>
+    <string name="app_name">Kuma Evolve</string>
+    <string name="navigation_drawer_open">Open navigation drawer</string>
+    <string name="navigation_drawer_close">Close navigation drawer</string>
+    
+    <!-- Navigation Menu -->
+    <string name="menu_home">Inicio</string>
+    <string name="menu_athletes">Atletas</string>
+    <string name="menu_settings">Configuración</string>
+    
+    <!-- Nav Header -->
+    <string name="nav_header_title">Kuma Evolve</string>
+    <string name="nav_header_subtitle">android.studio@kuma.com</string>
+
+    <!-- Fragments -->
+    <string name="home_title">EVOLVE</string>
+    <string name="athletes_title">Atletas</string>
+    <string name="settings_dark_mode">Modo Oscuro</string>
+    <string name="login_with_google">Iniciar sesión con Google</string>
+    <string name="logout">Cerrar sesión</string>
+    <string name="google_web_client_id">603632549683-d44v20og085ac8s1bkon25a0dammh5l9.apps.googleusercontent.com</string>
+</resources>

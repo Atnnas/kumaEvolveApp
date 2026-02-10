@@ -1,0 +1,47 @@
+{
+  "project_info": {
+    "project_number": "603632549683",
+    "project_id": "kuma-evolve-app",
+    "storage_bucket": "kuma-evolve-app.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:603632549683:android:5b7211d167f0213ee4c846",
+        "android_client_info": {
+          "package_name": "com.kuma.evolve"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "603632549683-lgioe9kv7bm3ce7liilf91i4j9cnu77e.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.kuma.evolve",
+            "certificate_hash": "63e65faa97cb5c019a61c37604207833417329a7"
+          }
+        },
+        {
+          "client_id": "603632549683-d44v20og085ac8s1bkon25a0dammh5l9.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBobSAg3yw7OPeRHhAKKY9yvimYc6mq17U"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "603632549683-d44v20og085ac8s1bkon25a0dammh5l9.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

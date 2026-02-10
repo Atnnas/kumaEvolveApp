@@ -1,0 +1,34 @@
+# Android
+*.iml
+.gradle
+/local.properties
+/.idea/caches
+/.idea/libraries
+/.idea/modules.xml
+/.idea/workspace.xml
+/.idea/navEditor.xml
+/.idea/assetWizardSettings.xml
+.DS_Store
+/build
+/app/build
+/captures
+.externalNativeBuild
+.cxx
+local.properties
+
+# Node.js
+node_modules/
+.env
+backend/.env
+backend/node_modules/
+
+# Logs and test scripts
+*.log
+backend/test-write.js
+backend/dns-test.js
+backend/native-ip-test.js
+backend/native-dns-test.js
+sha_report_final.txt
+sha_output.txt
+signing_report.txt
+get_sha.py
