@@ -6,69 +6,74 @@
     android:layout_height="wrap_content"
     android:layout_marginStart="16dp"
     android:layout_marginEnd="16dp"
-    android:layout_marginTop="8dp"
-    app:cardElevation="2dp"
-    app:cardCornerRadius="8dp">
+    android:layout_marginTop="10dp"
+    android:layout_marginBottom="2dp"
+    app:cardElevation="4dp"
+    app:cardCornerRadius="12dp"
+    app:strokeColor="@color/kuma_gold"
+    app:strokeWidth="1dp"
+    app:cardBackgroundColor="@color/kuma_white">
 
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:orientation="horizontal"
-        android:padding="12dp"
+        android:padding="16dp"
         android:gravity="center_vertical">
 
-        <!-- Photo -->
+        <!-- Photo with Gold Border -->
         <com.google.android.material.imageview.ShapeableImageView
             android:id="@+id/iv_attendance_photo"
-            android:layout_width="48dp"
-            android:layout_height="48dp"
+            android:layout_width="56dp"
+            android:layout_height="56dp"
             android:scaleType="centerCrop"
-            android:background="#1F1F1F"
+            android:background="@color/kuma_black"
+            android:padding="2dp"
             app:shapeAppearanceOverlay="@style/CircularShapeAppearance"
-            app:strokeColor="?attr/colorPrimary"
-            app:strokeWidth="1dp" />
+            app:strokeColor="@color/kuma_gold"
+            app:strokeWidth="2dp" />
 
         <!-- Info Container -->
         <LinearLayout
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_weight="1"
-            android:layout_marginStart="12dp"
+            android:layout_marginStart="16dp"
             android:orientation="vertical">
 
-            <!-- Number & Name -->
+            <!-- Name -->
             <TextView
                 android:id="@+id/tv_attendance_name"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="David Artavia"
-                android:textSize="16sp"
+                android:textSize="18sp"
                 android:textStyle="bold"
-                android:textColor="?attr/colorOnSurface" />
+                android:textColor="@color/kuma_black"
+                android:letterSpacing="0.02" />
 
             <!-- Time & Mode -->
             <LinearLayout
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:orientation="horizontal"
-                android:layout_marginTop="4dp">
+                android:layout_marginTop="4dp"
+                android:gravity="center_vertical">
 
                 <TextView
                     android:id="@+id/tv_attendance_time"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="08:15 AM"
-                    android:textSize="12sp"
-                    android:textColor="?attr/colorOnSurfaceVariant" />
+                    android:textSize="13sp"
+                    android:textColor="#757575" />
 
                 <TextView
                     android:id="@+id/tv_attendance_mode"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text=" • 🤖 Facial"
-                    android:textSize="12sp"
+                    android:textSize="13sp"
                     android:layout_marginStart="8dp"
-                    android:textColor="?attr/colorPrimary" />
+                    android:textColor="@color/kuma_red"
+                    android:textStyle="italic" />
 
             </LinearLayout>
 
@@ -77,28 +82,30 @@
                 android:id="@+id/tv_visitor_badge"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="🚶 Visitante"
-                android:textSize="11sp"
+                android:text="WALK-IN VISITANTE"
+                android:textSize="10sp"
                 android:visibility="gone"
-                android:layout_marginTop="4dp"
+                android:layout_marginTop="6dp"
                 android:paddingStart="8dp"
                 android:paddingEnd="8dp"
                 android:paddingTop="2dp"
                 android:paddingBottom="2dp"
-                android:background="@android:color/holo_orange_light"
-                android:textColor="@android:color/white" />
+                android:background="@color/kuma_brown"
+                android:textColor="@color/kuma_white"
+                android:letterSpacing="0.1"
+                android:textStyle="bold" />
 
         </LinearLayout>
 
-        <!-- Attendance Number -->
+        <!-- Attendance Number in a Gold/Red accent circle would be too much, let's keep it elegant -->
         <TextView
             android:id="@+id/tv_attendance_number"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="#1"
-            android:textSize="20sp"
+            android:textSize="22sp"
             android:textStyle="bold"
-            android:textColor="?attr/colorPrimary" />
+            android:textColor="@color/kuma_red"
+            android:alpha="0.8" />
 
     </LinearLayout>
 

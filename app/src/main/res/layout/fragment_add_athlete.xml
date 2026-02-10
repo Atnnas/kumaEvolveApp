@@ -3,7 +3,7 @@
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="?attr/colorSurface">
+    android:background="@color/kuma_white">
 
     <LinearLayout
         android:layout_width="match_parent"
@@ -15,16 +15,17 @@
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="Registro de Atleta"
-            android:textSize="24sp"
+            android:text="REGISTRO DE ATLETA"
+            android:textSize="22sp"
             android:textStyle="bold"
-            android:layout_marginBottom="24dp"
-            android:textColor="?attr/colorPrimary" />
+            android:layout_marginBottom="32dp"
+            android:textColor="@color/kuma_red"
+            android:letterSpacing="0.1" />
 
         <FrameLayout
             android:id="@+id/photo_container"
-            android:layout_width="120dp"
-            android:layout_height="120dp"
+            android:layout_width="140dp"
+            android:layout_height="140dp"
             android:layout_marginBottom="32dp"
             android:clickable="true"
             android:focusable="true">
@@ -33,28 +34,30 @@
                 android:id="@+id/iv_athlete_photo"
                 android:layout_width="match_parent"
                 android:layout_height="match_parent"
-                android:scaleType="centerCrop"
-                android:background="#1F1F1F"
+                android:scaleType="centerInside"
+                android:padding="12dp"
+                android:background="@color/kuma_black"
                 app:srcCompat="@android:drawable/ic_menu_camera"
                 app:shapeAppearanceOverlay="@style/CircularShapeAppearance"
-                app:strokeColor="?attr/colorPrimary"
-                app:strokeWidth="2dp" />
+                app:strokeColor="@color/kuma_gold"
+                app:strokeWidth="3dp" />
 
-            <FrameLayout
-                android:layout_width="32dp"
-                android:layout_height="32dp"
+            <com.google.android.material.card.MaterialCardView
+                android:layout_width="36dp"
+                android:layout_height="36dp"
                 android:layout_gravity="bottom|end"
-                android:background="@android:drawable/presence_online"
-                android:backgroundTint="?attr/colorPrimary">
+                app:cardBackgroundColor="@color/kuma_gold"
+                app:cardCornerRadius="18dp"
+                app:cardElevation="4dp">
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:layout_gravity="center"
                     android:text="+"
-                    android:textColor="@android:color/white"
-                    android:textSize="20sp"
+                    android:textColor="@color/kuma_black"
+                    android:textSize="22sp"
                     android:textStyle="bold" />
-            </FrameLayout>
+            </com.google.android.material.card.MaterialCardView>
         </FrameLayout>
 
         <com.google.android.material.textfield.TextInputLayout
@@ -62,6 +65,8 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:hint="Cédula"
+            app:boxStrokeColor="@color/kuma_brown"
+            app:hintTextColor="@color/kuma_brown"
             android:layout_marginBottom="16dp">
             <com.google.android.material.textfield.TextInputEditText
                 android:id="@+id/et_id_card"
@@ -75,6 +80,8 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:hint="Nombre Completo"
+            app:boxStrokeColor="@color/kuma_brown"
+            app:hintTextColor="@color/kuma_brown"
             android:layout_marginBottom="16dp">
             <com.google.android.material.textfield.TextInputEditText
                 android:id="@+id/et_name"
@@ -84,10 +91,12 @@
         </com.google.android.material.textfield.TextInputLayout>
 
         <com.google.android.material.textfield.TextInputLayout
-            style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"
+            style="@style/Widget.MaterialComponents.TextInputLayout.Outlined Box"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:hint="Fecha de Nacimiento"
+            app:boxStrokeColor="@color/kuma_brown"
+            app:hintTextColor="@color/kuma_brown"
             android:layout_marginBottom="16dp"
             app:endIconMode="custom"
             app:endIconDrawable="@android:drawable/ic_menu_my_calendar">
@@ -105,6 +114,8 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:hint="Grado (Dan/Kyu)"
+            app:boxStrokeColor="@color/kuma_brown"
+            app:hintTextColor="@color/kuma_brown"
             android:layout_marginBottom="16dp">
             <com.google.android.material.textfield.TextInputEditText
                 android:id="@+id/et_grade"
@@ -118,7 +129,9 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:hint="Peso (Kg)"
-            android:layout_marginBottom="16dp">
+            app:boxStrokeColor="@color/kuma_brown"
+            app:hintTextColor="@color/kuma_brown"
+            android:layout_marginBottom="32dp">
             <com.google.android.material.textfield.TextInputEditText
                 android:id="@+id/et_weight"
                 android:layout_width="match_parent"
@@ -127,13 +140,17 @@
         </com.google.android.material.textfield.TextInputLayout>
 
 
-        <Button
+        <com.google.android.material.button.MaterialButton
             android:id="@+id/btn_save_athlete"
             android:layout_width="match_parent"
-            android:layout_height="56dp"
-            android:text="Guardar Atleta"
-            android:backgroundTint="#FF0000"
-            android:textColor="@android:color/white"
+            android:layout_height="64dp"
+            android:text="GUARDAR ATLETA"
+            app:backgroundTint="@color/kuma_black"
+            android:textColor="@color/kuma_gold"
+            android:letterSpacing="0.1"
+            app:cornerRadius="12dp"
+            app:strokeColor="@color/kuma_gold"
+            app:strokeWidth="1dp"
             android:textStyle="bold" />
 
     </LinearLayout>

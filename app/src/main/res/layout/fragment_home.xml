@@ -3,19 +3,17 @@
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="#121212">
+    android:background="@color/kuma_black">
 
     <com.google.android.material.card.MaterialCardView
         android:id="@+id/logo_card"
         android:layout_width="280dp"
         android:layout_height="280dp"
         app:shapeAppearanceOverlay="@style/ShapeAppearance.KumaEvolve.Circle"
-        app:cardElevation="60dp"
-        app:cardBackgroundColor="#000000"
-        app:strokeWidth="10dp"
-        app:strokeColor="#1F1F1F"
-        android:outlineAmbientShadowColor="#000000"
-        android:outlineSpotShadowColor="#000000"
+        app:cardElevation="32dp"
+        app:cardBackgroundColor="@color/kuma_black"
+        app:strokeWidth="4dp"
+        app:strokeColor="@color/kuma_gold"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
@@ -26,7 +24,8 @@
             android:id="@+id/imageViewLogo"
             android:layout_width="match_parent"
             android:layout_height="match_parent"
-            android:scaleType="centerCrop"
+            android:scaleType="centerInside"
+            android:padding="20dp"
             android:src="@drawable/kuma_logo" />
     </com.google.android.material.card.MaterialCardView>
 
@@ -34,13 +33,26 @@
         android:id="@+id/text_evolve"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="@string/home_title"
-        android:textColor="?attr/colorOnSurface"
-        android:textSize="32sp"
+        android:text="EVOLVE"
+        android:textColor="@color/kuma_gold"
+        android:textSize="36sp"
         android:textStyle="bold"
-        android:letterSpacing="0.2"
+        android:letterSpacing="0.4"
         android:layout_marginTop="24dp"
         app:layout_constraintTop_toBottomOf="@id/logo_card"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent" />
+
+    <TextView
+        android:id="@+id/text_dojo"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="KUMA DOJO • COSTA RICA"
+        android:textColor="@color/kuma_white"
+        android:textSize="12sp"
+        android:letterSpacing="0.5"
+        android:layout_marginTop="4dp"
+        app:layout_constraintTop_toBottomOf="@id/text_evolve"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent" />
 
@@ -48,15 +60,17 @@
         android:id="@+id/btn_google_login"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_marginTop="32dp"
+        android:layout_marginTop="48dp"
         android:text="Acceder con Google"
         android:textAllCaps="false"
-        android:textColor="#FFFFFF"
-        app:cornerRadius="8dp"
+        android:textColor="@color/kuma_black"
+        android:paddingStart="24dp"
+        android:paddingEnd="24dp"
+        app:cornerRadius="12dp"
         app:icon="@android:drawable/ic_menu_search"
-        app:iconPadding="8dp"
-        app:backgroundTint="#4285F4"
-        app:layout_constraintTop_toBottomOf="@id/text_evolve"
+        app:iconPadding="12dp"
+        app:backgroundTint="@color/kuma_white"
+        app:layout_constraintTop_toBottomOf="@id/text_dojo"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent" />
 

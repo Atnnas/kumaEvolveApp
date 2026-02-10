@@ -8,13 +8,13 @@ import com.google.mlkit.vision.face.Face
 class FaceGraphic(overlay: GraphicOverlay, private val face: Face) : GraphicOverlay.Graphic(overlay) {
 
     private val dotPaint = Paint().apply {
-        color = Color.CYAN
+        color = Color.parseColor("#D4AF37") // Kuma Gold
         style = Paint.Style.FILL
         strokeWidth = 4f
     }
 
     private val linePaint = Paint().apply {
-        color = Color.parseColor("#4000FFFF") // semi-transparent cyan
+        color = Color.parseColor("#80D4AF37") // semi-transparent gold
         style = Paint.Style.STROKE
         strokeWidth = 2f
     }
