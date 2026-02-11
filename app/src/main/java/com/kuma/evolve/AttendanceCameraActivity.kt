@@ -150,28 +150,30 @@ class AttendanceCameraActivity : AppCompatActivity() {
     private var lastPoseCaptureTime = 0L
     private val POSE_CAPTURE_DELAY = 800L // Delay to avoid multiple captures in same angle
 
-    fun onFacePoseDetected(pitch: Float, yaw: Float) {
+    fun onFacePoseDetected(pitch: Float, yaw: Float, frame: Bitmap? = null) {
         if (!isEnrollmentMode || currentStage == EnrollmentStage.DONE || isScanPaused) return
 
         val now = System.currentTimeMillis()
         if (now - lastPoseCaptureTime < POSE_CAPTURE_DELAY) return
 
         val isCorrectPosition = when (currentStage) {
-            EnrollmentStage.CENTER -> Math.abs(pitch) < 12 && Math.abs(yaw) < 12
-            EnrollmentStage.LEFT -> yaw > 15
-            EnrollmentStage.RIGHT -> yaw < -15
-            EnrollmentStage.UP -> pitch > 10
-            EnrollmentStage.DOWN -> pitch < -10
+            EnrollmentStage.CENTER -> Math.abs(pitch) < 14 && Math.abs(yaw) < 14 // Rangos más amplios
+            EnrollmentStage.LEFT -> yaw > 12
+            EnrollmentStage.RIGHT -> yaw < -12
+            EnrollmentStage.UP -> pitch > 8
+            EnrollmentStage.DOWN -> pitch < -8
             else -> false
         }
 
-        if (isCorrectPosition) {
+        if (isCorrectPosition && frame != null) {
             lastPoseCaptureTime = now
             runOnUiThread {
                 tvStatusHint.text = "🎯 CAPTURANDO..."
                 tvStatusHint.setTextColor(getColor(R.color.kuma_gold))
             }
-            takePhoto()
+            
+            // Envío directo del frame capturado por el analizador
+            sendToRecognition(frame)
             vibrateEffect()
         }
     }
@@ -421,10 +423,35 @@ class AttendanceCameraActivity : AppCompatActivity() {
     }
 
     private fun imageProxyToBitmap(image: ImageProxy): Bitmap? {
-        val buffer = image.planes[0].buffer
-        val bytes = ByteArray(buffer.remaining())
-        buffer.get(bytes)
-        return android.graphics.BitmapFactory.decodeByteArray(bytes, 0, bytes.size)
+        val nv21 = yuv420888ToNv21(image)
+        val yuvImage = android.graphics.YuvImage(nv21, android.graphics.ImageFormat.NV21, image.width, image.height, null)
+        val out = java.io.ByteArrayOutputStream()
+        yuvImage.compressToJpeg(android.graphics.Rect(0, 0, image.width, image.height), 100, out)
+        val imageBytes = out.toByteArray()
+        val bitmap = android.graphics.BitmapFactory.decodeByteArray(imageBytes, 0, imageBytes.size)
+        
+        // Rotate bitmap if necessary
+        val matrix = android.graphics.Matrix()
+        matrix.postRotate(image.imageInfo.rotationDegrees.toFloat())
+        return Bitmap.createBitmap(bitmap, 0, 0, bitmap.width, bitmap.height, matrix, true)
+    }
+
+    private fun yuv420888ToNv21(image: ImageProxy): ByteArray {
+        val yBuffer = image.planes[0].buffer
+        val uBuffer = image.planes[1].buffer
+        val vBuffer = image.planes[2].buffer
+
+        val ySize = yBuffer.remaining()
+        val uSize = uBuffer.remaining()
+        val vSize = vBuffer.remaining()
+
+        val nv21 = ByteArray(ySize + uSize + vSize)
+
+        yBuffer.get(nv21, 0, ySize)
+        vBuffer.get(nv21, ySize, vSize)
+        uBuffer.get(nv21, ySize + vSize, uSize)
+
+        return nv21
     }
 
     override fun onDestroy() {
@@ -467,11 +494,17 @@ class AttendanceCameraActivity : AppCompatActivity() {
                             // Proximity check
                             activity?.onFaceDetected(face)
                             
+                            // Extraer bitmap del frame para enrolamiento instantáneo
+                            val frameBitmap = if (activity?.isEnrollmentMode == true) {
+                                activity.imageProxyToBitmap(imageProxy)
+                            } else null
+
                             // Report head pose for premium enrollment
-                            activity?.onFacePoseDetected(face.headEulerAngleX, face.headEulerAngleY)
+                            activity?.onFacePoseDetected(face.headEulerAngleX, face.headEulerAngleY, frameBitmap)
 
                             // Trigger recognition if faces are present and we are not recently matched (Regular attendance)
                             if (faces.isNotEmpty() && !activity!!.isEnrollmentMode) {
+                                // For regular attendance, we still trigger takePhoto or we could also use frameBitmap
                                 activity.takePhoto()
                             }
                         }
