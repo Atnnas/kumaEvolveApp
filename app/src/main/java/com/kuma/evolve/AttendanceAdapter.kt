@@ -38,7 +38,7 @@ class AttendanceAdapter(
         val attendance = attendances[position]
 
         // Load photo with robust Base64 decoding
-        attendance.photoUrl?.let { url ->
+        attendance.evidencePhotoUrl?.let { url ->
             loadPhotoFromBase64(url, holder.ivPhoto)
         }
 
@@ -53,8 +53,8 @@ class AttendanceAdapter(
         val modeText = if (attendance.registrationMode == "facial") "Facial" else "Manual"
         holder.tvMode.text = " • $modeIcon $modeText"
 
-        // Attendance number
-        holder.tvNumber.text = "#${attendance.attendanceNumber}"
+        // Attendance number (daily sequence)
+        holder.tvNumber.text = "#${attendance.dailySequence}"
 
         // Visitor badge
         if (attendance.isVisitor) {

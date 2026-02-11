@@ -116,6 +116,12 @@ interface ApiService {
     @DELETE("/api/attendance/{id}")
     fun deleteAttendance(@Path("id") id: String): Call<CommonResponse>
     @Multipart
+    @POST("/api/attendance/scan")
+    fun scanFace(
+        @Part image: MultipartBody.Part
+    ): Call<RecognitionResponse>
+
+    @Multipart
     @POST("/api/attendance/recognize")
     fun recognizeFace(
         @Part image: MultipartBody.Part
@@ -157,7 +163,8 @@ data class RecognitionResponse(
     val name: String?,
     val confidence: Int?,
     val message: String? = null,
-    val descriptor: List<Double>? = null
+    val descriptor: List<Double>? = null,
+    val attendance: com.kuma.evolve.data.Attendance? = null
 )
 
 data class CommonResponse(val success: Boolean, val message: String? = null, val error: String? = null)

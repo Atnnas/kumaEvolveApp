@@ -323,12 +323,12 @@ app.post('/api/attendance', upload.single('image'), async (req, res) => {
         }
 
         const attendanceData = {
-            attendanceNumber,
+            dailySequence: attendanceNumber,
             timestamp: new Date(),
             athleteRef: isVisitor ? null : athleteId,
             studentName: studentName || 'Visitante',
-            photoUrl,
-            isVisitor,
+            evidencePhotoUrl: photoUrl,
+            isVisitor: isVisitor,
             recognitionConfidence: recognitionConfidence ? parseFloat(recognitionConfidence) : null,
             registrationMode: registrationMode || 'manual'
         };
@@ -428,27 +428,24 @@ app.delete('/api/attendance/:id', async (req, res) => {
     }
 });
 
-// POST /api/attendance/recognize - Reconocer atleta por foto
-app.post('/api/attendance/recognize', upload.single('image'), async (req, res) => {
+// POST /api/attendance/scan - RECONOCIMIENTO Y REGISTRO ATÓMICO (MÁXIMA VELOCIDAD)
+app.post('/api/attendance/scan', upload.single('image'), async (req, res) => {
     try {
         if (!req.file) {
             return res.status(400).json({ success: false, message: 'No se recibió imagen' });
         }
 
-        console.log('🔍 Iniciando proceso de reconocimiento facial...');
+        console.log('🔍 [ATOMIC SCAN] Iniciando reconocimiento...');
         const capturedDescriptor = await FaceService.getDescriptor(req.file.buffer);
 
         if (!capturedDescriptor) {
-            console.log('⚠️ No se detectó rostro en la imagen capturada');
-            return res.status(200).json({ success: false, message: 'No se detectó ningún rostro' });
+            return res.status(200).json({ success: false, recognized: false, message: 'No se detectó rostro' });
         }
 
-        // Obtener descriptores de todos los atletas que los tengan
-        const athletes = await Athlete.find({ faceDescriptor: { $ne: null } }).select('name faceDescriptor');
+        const athletes = await Athlete.find({ faceDescriptor: { $ne: null } }).select('name faceDescriptor imageUrl');
 
         if (athletes.length === 0) {
-            console.log('⚠️ No hay atletas con descriptores registrados');
-            return res.status(200).json({ success: false, message: 'No hay base de datos facial registrada' });
+            return res.status(200).json({ success: false, recognized: false, message: 'Sin base facial' });
         }
 
         const athleteDescriptors = athletes.map(a => ({
@@ -460,39 +457,86 @@ app.post('/api/attendance/recognize', upload.single('image'), async (req, res) =
         const match = FaceService.findBestMatch(capturedDescriptor, athleteDescriptors);
 
         if (!match) {
-            console.log('👤 Atleta no reconocido (Visitante)');
+            console.log('👤 [ATOMIC SCAN] Atleta no reconocido');
             return res.status(200).json({ success: true, recognized: false });
         }
 
-        console.log(`✅ Atleta reconocido: ${match.name} (${match.confidence}%)`);
+        const athleteId = match.athleteId;
+        const studentName = match.name;
 
-        // --- ENTRENAMIENTO FACIAL PROGRESIVO ---
-        // Si el reconocimiento es muy confiable, usamos el nuevo descriptor para afinar la BD
-        if (match.confidence > 90) {
+        // --- VERIFICACIÓN DE DUPLICADOS ---
+        const startOfDay = new Date();
+        startOfDay.setHours(0, 0, 0, 0);
+        const endOfDay = new Date();
+        endOfDay.setHours(23, 59, 59, 999);
+
+        const alreadyRegistered = await Attendance.findOne({
+            athleteRef: athleteId,
+            timestamp: { $gte: startOfDay, $lte: endOfDay }
+        });
+
+        if (alreadyRegistered) {
+            console.log(`⚠️ [ATOMIC SCAN] ${studentName} ya registró asistencia hoy`);
+            return res.status(200).json({
+                success: false,
+                recognized: true,
+                message: 'YA_REGISTRADO',
+                name: studentName,
+                athleteId: athleteId
+            });
+        }
+
+        // --- REGISTRO DE ASISTENCIA ---
+        const todayCount = await Attendance.countDocuments({
+            timestamp: { $gte: startOfDay, $lte: endOfDay }
+        });
+
+        const attendanceNumber = todayCount + 1;
+        const photoUrl = await processImage(req.file);
+
+        const attendanceData = {
+            dailySequence: attendanceNumber,
+            timestamp: new Date(),
+            athleteRef: athleteId,
+            studentName: studentName,
+            evidencePhotoUrl: photoUrl,
+            isVisitor: false,
+            recognitionConfidence: match.confidence,
+            registrationMode: 'facial'
+        };
+
+        const attendance = new Attendance(attendanceData);
+        await attendance.save();
+
+        console.log(`✅ [ATOMIC SCAN] Asistencia #${attendanceNumber} registrada: ${studentName}`);
+
+        // --- AUTO-ENTRENAMIENTO AGRESIVO ---
+        if (match.confidence > 85) {
             try {
-                const athlete = await Athlete.findById(match.athleteId);
+                const athlete = await Athlete.findById(athleteId);
                 if (athlete && athlete.faceDescriptor) {
-                    const refinedDescriptor = FaceService.mergeDescriptors(athlete.faceDescriptor, capturedDescriptor, 0.05); // Alpha 5%
+                    const refinedDescriptor = FaceService.mergeDescriptors(athlete.faceDescriptor, capturedDescriptor, 0.10);
                     athlete.faceDescriptor = refinedDescriptor;
                     await athlete.save();
-                    console.log(`🧠 Refinando descriptor facial para: ${athlete.name} (Auto-entrenamiento)`);
+                    console.log(`🧠 [ATOMIC SCAN] Auto-entrenamiento completado para ${studentName}`);
                 }
             } catch (err) {
                 console.error('❌ Error en auto-entrenamiento:', err.message);
             }
         }
 
-        res.status(200).json({
+        res.status(201).json({
             success: true,
             recognized: true,
-            athleteId: match.athleteId,
-            name: match.name,
+            athleteId: athleteId,
+            name: studentName,
             confidence: match.confidence,
-            descriptor: Array.from(capturedDescriptor) // Devolver para enrolamiento
+            attendance: attendance,
+            descriptor: Array.from(capturedDescriptor) // Necesario para enrolamiento
         });
 
     } catch (error) {
-        console.error('❌ Error en /api/attendance/recognize:', error);
+        console.error('❌ Error en /api/attendance/scan:', error);
         res.status(500).json({ success: false, error: error.message });
     }
 });
@@ -540,15 +584,15 @@ app.get('/api/attendance/export', async (req, res) => {
 
         const attendances = await Attendance.find(filter).populate('athleteRef', 'name idCard').sort({ timestamp: -1 });
 
-        let csv = 'Numero;Fecha;Hora;Atleta;ID Atleta;Modo;Visitante\n';
+        let csv = 'DailySequence;Date;Time;Athlete;AthleteID;Mode;Visitor\n';
         attendances.forEach(att => {
             const date = att.timestamp.toLocaleDateString('es-CR');
             const time = att.timestamp.toLocaleTimeString('es-CR');
             const name = att.athleteRef ? att.athleteRef.name : att.studentName;
             const id = att.athleteRef ? att.athleteRef.idCard : 'N/A';
             const mode = att.registrationMode === 'facial' ? 'Facial' : 'Manual';
-            const visitor = att.isVisitor ? 'SI' : 'NO';
-            csv += `${att.attendanceNumber};${date};${time};${name};${id};${mode};${visitor}\n`;
+            const visitor = att.isVisitor ? 'YES' : 'NO';
+            csv += `${att.dailySequence};${date};${time};${name};${id};${mode};${visitor}\n`;
         });
 
         res.set('Content-Type', 'text/csv');

@@ -5,11 +5,11 @@ import java.util.Date
 
 data class Attendance(
     val _id: String? = null,
-    val attendanceNumber: Int,
+    val dailySequence: Int,
     val timestamp: Date,
     val athleteRef: AthleteRef? = null,  // Populated athlete reference
     val studentName: String,
-    val photoUrl: String?,
+    val evidencePhotoUrl: String?,
     val isVisitor: Boolean = false,
     val recognitionConfidence: Double? = null,
     val registrationMode: String,  // "facial" or "manual"

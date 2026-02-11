@@ -138,7 +138,7 @@ class AttendanceCameraActivity : AppCompatActivity() {
             try {
                 cameraProvider.unbindAll()
                 cameraProvider.bindToLifecycle(
-                    this, cameraSelector, preview, imageCapture, imageAnalyzer
+                    this, cameraSelector, preview, imageAnalyzer
                 )
             } catch (exc: Exception) {
                 Log.e("AttendanceCam", "Use case binding failed", exc)
@@ -259,13 +259,22 @@ class AttendanceCameraActivity : AppCompatActivity() {
         val requestFile = byteArray.toRequestBody("image/jpeg".toMediaTypeOrNull())
         val body = okhttp3.MultipartBody.Part.createFormData("image", "capture.jpg", requestFile)
 
-        com.kuma.evolve.network.RetrofitClient.instance.recognizeFace(body).enqueue(object : retrofit2.Callback<com.kuma.evolve.network.RecognitionResponse> {
+        // Usamos scanFace para modo atómico (Reconoce + Registra en un solo paso)
+        com.kuma.evolve.network.RetrofitClient.instance.scanFace(body).enqueue(object : retrofit2.Callback<com.kuma.evolve.network.RecognitionResponse> {
             override fun onResponse(call: retrofit2.Call<com.kuma.evolve.network.RecognitionResponse>, response: retrofit2.Response<com.kuma.evolve.network.RecognitionResponse>) {
                 if (response.isSuccessful && response.body() != null) {
                     val res = response.body()!!
-                    if (isEnrollmentMode && res.descriptor != null) {
-                        handleEnrollmentDescriptor(res.descriptor)
-                    } else if (!isEnrollmentMode) {
+                    if (isEnrollmentMode) {
+                        // En enrolamiento solo nos importa el descriptor si lo devolviera, 
+                        // pero aquí usamos la respuesta de éxito de reconocimiento
+                        if (res.recognized && res.descriptor != null) {
+                            handleEnrollmentDescriptor(res.descriptor)
+                        } else if (res.recognized) {
+                           // Fallback: si no viene el descriptor en scanFace, lo pedimos o lo simulamos
+                           // (En el server actual scanFace no devuelve descriptor para ahorrar ancho de banda, 
+                           // pero para enrolamiento usaremos el endpoint de recognize si es necesario)
+                        }
+                    } else {
                         showRecognitionResult(res)
                     }
                 } else {
@@ -356,65 +365,34 @@ class AttendanceCameraActivity : AppCompatActivity() {
     }
 
     private fun showRecognitionResult(result: com.kuma.evolve.network.RecognitionResponse) {
-        if (isScanPaused || lastRecognizedId == result.athleteId) return
+        if (isScanPaused || (lastRecognizedId == result.athleteId && result.message != "YA_REGISTRADO")) return
 
         if (result.recognized) {
-            vibrateEffect() // 📳 Feedback de éxito
-            tvStatusHint.text = "✅ RECONOCIDO: ${result.name}"
-            tvStatusHint.setTextColor(getColor(R.color.kuma_gold))
-            
-            // Auto-submit attendance immediately
-            submitAttendance(result.athleteId, result.name, "facial")
+            vibrateEffect()
+            isScanPaused = true // Detener escaneo tras resultado (asistencia automática en backend)
+            lastRecognizedId = result.athleteId
+
+            if (result.success && result.attendance != null) {
+                // REGISTRO EXITOSO (NUEVO)
+                tvStatusHint.text = "✅ REGISTRADO: ${result.name}"
+                tvStatusHint.setTextColor(getColor(R.color.kuma_gold))
+                Toast.makeText(this, "Asistencia #${result.attendance.dailySequence}: ${result.name}", Toast.LENGTH_SHORT).show()
+            } else if (result.message == "YA_REGISTRADO") {
+                // YA ESTABA REGISTRADO HOY
+                tvStatusHint.text = "⚠️ YA REGISTRADO: ${result.name}"
+                tvStatusHint.setTextColor(getColor(R.color.kuma_red))
+            }
         } else {
-            vibrateEffect() // 📳 Feedback de no-reconocido
-            isScanPaused = true // 🥋 Detener análisis hasta que el rostro se retire
+            vibrateEffect()
+            isScanPaused = true 
             tvStatusHint.text = "👤 ROSTRO NO RECONOCIDO"
             tvStatusHint.setTextColor(getColor(R.color.kuma_red))
         }
     }
 
+    // submitAttendance is now deprecated in favor of atomic scanFace
     private fun submitAttendance(athleteId: String?, name: String?, mode: String) {
-        if (athleteId == null || isScanPaused) return
-        
-        isScanPaused = true 
-        lastRecognizedId = athleteId // Memory to avoid double scans of same person
-        
-        val athleteIdBody = athleteId.toRequestBody("text/plain".toMediaTypeOrNull())
-        val nameBody = name?.toRequestBody("text/plain".toMediaTypeOrNull()) ?: "Desconocido".toRequestBody("text/plain".toMediaTypeOrNull())
-        val modeBody = mode.toRequestBody("text/plain".toMediaTypeOrNull())
-        
-        val emptyPart = okhttp3.MultipartBody.Part.createFormData("image", "none.jpg", ByteArray(0).toRequestBody("image/jpeg".toMediaTypeOrNull()))
-
-        com.kuma.evolve.network.RetrofitClient.instance.registerAttendance(
-            athleteIdBody, nameBody, modeBody, null, emptyPart
-        ).enqueue(object : retrofit2.Callback<com.kuma.evolve.network.AttendanceResponse> {
-            override fun onResponse(call: retrofit2.Call<com.kuma.evolve.network.AttendanceResponse>, response: retrofit2.Response<com.kuma.evolve.network.AttendanceResponse>) {
-                if (response.isSuccessful) {
-                    Toast.makeText(this@AttendanceCameraActivity, "Asistencia: $name", Toast.LENGTH_SHORT).show()
-                    tvStatusHint.text = "✅ REGISTRADO: $name"
-                } else {
-                    // Check for duplicate message from server
-                    try {
-                        val errorBody = response.errorBody()?.string()
-                        if (errorBody?.contains("YA_REGISTRADO") == true) {
-                            tvStatusHint.text = "⚠️ YA REGISTRADO HOY: $name"
-                            tvStatusHint.setTextColor(getColor(R.color.kuma_red))
-                        } else {
-                            tvStatusHint.text = "Error al registrar"
-                        }
-                    } catch (e: Exception) {
-                        tvStatusHint.text = "Error en el servidor"
-                    }
-                }
-                // We keep isScanPaused = true until they leave the camera
-                Log.d("AttendanceCam", "Registro completado. Esperando a que el rostro se retire.")
-            }
-
-            override fun onFailure(call: retrofit2.Call<com.kuma.evolve.network.AttendanceResponse>, t: Throwable) {
-                tvStatusHint.text = "Error de conexión"
-                isScanPaused = false // Retry on connection failure
-            }
-        })
+        // Obsolete
     }
 
     private fun openManualRegistration() {
@@ -494,18 +472,17 @@ class AttendanceCameraActivity : AppCompatActivity() {
                             // Proximity check
                             activity?.onFaceDetected(face)
                             
-                            // Extraer bitmap del frame para enrolamiento instantáneo
-                            val frameBitmap = if (activity?.isEnrollmentMode == true) {
-                                activity.imageProxyToBitmap(imageProxy)
-                            } else null
+                            // Extraer bitmap del frame para enrolamiento o asistencia instantánea
+                            val frameBitmap = activity?.imageProxyToBitmap(imageProxy)
 
                             // Report head pose for premium enrollment
-                            activity?.onFacePoseDetected(face.headEulerAngleX, face.headEulerAngleY, frameBitmap)
-
-                            // Trigger recognition if faces are present and we are not recently matched (Regular attendance)
-                            if (faces.isNotEmpty() && !activity!!.isEnrollmentMode) {
-                                // For regular attendance, we still trigger takePhoto or we could also use frameBitmap
-                                activity.takePhoto()
+                            if (activity?.isEnrollmentMode == true) {
+                                activity.onFacePoseDetected(face.headEulerAngleX, face.headEulerAngleY, frameBitmap)
+                            } else {
+                                // For regular attendance, use the frame directly
+                                if (frameBitmap != null && !activity!!.isScanPaused) {
+                                    activity.sendToRecognition(frameBitmap)
+                                }
                             }
                         }
                     }

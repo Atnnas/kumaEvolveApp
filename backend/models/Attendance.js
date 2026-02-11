@@ -1,7 +1,7 @@
 const mongoose = require('mongoose');
 
 const AttendanceSchema = new mongoose.Schema({
-    attendanceNumber: {
+    dailySequence: {
         type: Number,
         required: true
     },
@@ -19,7 +19,7 @@ const AttendanceSchema = new mongoose.Schema({
         type: String,
         required: true
     },
-    photoUrl: {
+    evidencePhotoUrl: {
         type: String,
         required: true
     },
@@ -50,6 +50,6 @@ const AttendanceSchema = new mongoose.Schema({
 // Índices para mejorar performance de queries
 AttendanceSchema.index({ timestamp: -1 });
 AttendanceSchema.index({ athleteRef: 1 });
-AttendanceSchema.index({ attendanceNumber: 1, timestamp: -1 });
+AttendanceSchema.index({ dailySequence: 1, timestamp: -1 });
 
 module.exports = mongoose.model('Attendance', AttendanceSchema);
