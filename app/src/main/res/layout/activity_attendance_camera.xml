@@ -18,6 +18,13 @@
         android:layout_width="match_parent"
         android:layout_height="match_parent" />
 
+    <!-- Premium Enrollment Guide Overlay (Circular Progress) -->
+    <com.kuma.evolve.EnrollmentOverlayView
+        android:id="@+id/enrollment_overlay"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:visibility="gone" />
+
     <!-- Manual Mode Button -->
     <com.google.android.material.button.MaterialButton
         android:id="@+id/btn_manual_mode"
@@ -34,18 +41,19 @@
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent" />
 
-    <!-- Capture Guide -->
+    <!-- Capture Guide (Oval) -->
     <ImageView
         android:id="@+id/iv_capture_guide"
         android:layout_width="280dp"
         android:layout_height="380dp"
-        android:alpha="0.8"
+        android:alpha="0.3"
         android:src="@drawable/ic_capture_guide_oval"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent"
-        app:tint="@color/kuma_gold" />
+        app:layout_constraintVertical_bias="0.45"
+        app:tint="@color/kuma_white" />
 
     <!-- Bottom Controls -->
     <LinearLayout
@@ -61,14 +69,15 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:text="POSICIONA TU ROSTRO EN EL OVALO"
-            android:textColor="@color/kuma_gold"
-            android:textSize="12sp"
+            android:textColor="@color/kuma_white"
+            android:textSize="14sp"
             android:textStyle="bold"
             android:letterSpacing="0.1"
             android:layout_marginBottom="24dp"
-            android:background="@color/kuma_black"
-            android:paddingHorizontal="16dp"
-            android:paddingVertical="8dp" />
+            android:background="@drawable/bg_status_hint"
+            android:paddingHorizontal="24dp"
+            android:paddingVertical="12dp"
+            android:textAlignment="center" />
 
         <com.google.android.material.floatingactionbutton.FloatingActionButton
             android:id="@+id/fab_capture"
@@ -79,7 +88,8 @@
             app:tint="@color/kuma_white"
             app:elevation="12dp"
             app:strokeColor="@color/kuma_gold"
-            app:strokeWidth="2dp" />
+            app:strokeWidth="2dp"
+            android:visibility="gone" />
 
     </LinearLayout>
 

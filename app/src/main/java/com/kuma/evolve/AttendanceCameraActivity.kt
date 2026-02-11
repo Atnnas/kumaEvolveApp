@@ -40,8 +40,14 @@ class AttendanceCameraActivity : AppCompatActivity() {
     private var enrollmentAthleteId: String? = null
     private var enrollmentAthleteName: String? = null
     private val enrollmentDescriptors = mutableListOf<List<Double>>()
-    private val REQUIRED_ENROLLMENT_COUNT = 10
+    private val REQUIRED_ENROLLMENT_COUNT = 5
     private lateinit var tvStatusHint: TextView
+    private lateinit var enrollmentOverlay: EnrollmentOverlayView
+    
+    // Premium Enrollment Stages
+    private enum class EnrollmentStage { CENTER, LEFT, RIGHT, UP, DOWN, DONE }
+    private var currentStage = EnrollmentStage.CENTER
+    private val completedStages = mutableSetOf<EnrollmentStage>()
     
     private var imageCapture: ImageCapture? = null
 
@@ -65,7 +71,17 @@ class AttendanceCameraActivity : AppCompatActivity() {
 
         previewView = findViewById(R.id.preview_view)
         graphicOverlay = findViewById(R.id.graphic_overlay)
+        enrollmentOverlay = findViewById(R.id.enrollment_overlay)
         tvStatusHint = findViewById(R.id.tv_status_hint)
+        
+        if (isEnrollmentMode) {
+            enrollmentOverlay.visibility = android.view.View.VISIBLE
+            updateEnrollmentGuide()
+            findViewById<MaterialButton>(R.id.btn_manual_mode).visibility = android.view.View.VISIBLE
+            findViewById<MaterialButton>(R.id.btn_manual_mode).text = "CANCELAR ENROLAMIENTO"
+        } else {
+            findViewById<MaterialButton>(R.id.btn_manual_mode).visibility = android.view.View.GONE
+        }
 
         if (allPermissionsGranted()) {
             startCamera()
@@ -73,10 +89,27 @@ class AttendanceCameraActivity : AppCompatActivity() {
             ActivityCompat.requestPermissions(this, REQUIRED_PERMISSIONS, REQUEST_CODE_PERMISSIONS)
         }
 
-        findViewById<MaterialButton>(R.id.btn_manual_mode).visibility = android.view.View.GONE
         findViewById<FloatingActionButton>(R.id.fab_capture).visibility = android.view.View.GONE
 
         cameraExecutor = Executors.newSingleThreadExecutor()
+    }
+
+    private fun allPermissionsGranted() = REQUIRED_PERMISSIONS.all {
+        ContextCompat.checkSelfPermission(baseContext, it) == PackageManager.PERMISSION_GRANTED
+    }
+
+    override fun onRequestPermissionsResult(
+        requestCode: Int, permissions: Array<String>, grantResults: IntArray
+    ) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults)
+        if (requestCode == REQUEST_CODE_PERMISSIONS) {
+            if (allPermissionsGranted()) {
+                startCamera()
+            } else {
+                Toast.makeText(this, "Permisos de cámara no otorgados por el usuario.", Toast.LENGTH_SHORT).show()
+                finish()
+            }
+        }
     }
 
     private fun startCamera() {
@@ -98,7 +131,7 @@ class AttendanceCameraActivity : AppCompatActivity() {
                 .build()
                 .also {
                     it.setAnalyzer(cameraExecutor, FaceAnalyzer(graphicOverlay))
-                }
+            }
 
             val cameraSelector = CameraSelector.DEFAULT_FRONT_CAMERA
 
@@ -112,6 +145,75 @@ class AttendanceCameraActivity : AppCompatActivity() {
             }
 
         }, ContextCompat.getMainExecutor(this))
+    }
+
+    private var lastPoseCaptureTime = 0L
+    private val POSE_CAPTURE_DELAY = 800L // Delay to avoid multiple captures in same angle
+
+    fun onFacePoseDetected(pitch: Float, yaw: Float) {
+        if (!isEnrollmentMode || currentStage == EnrollmentStage.DONE || isScanPaused) return
+
+        val now = System.currentTimeMillis()
+        if (now - lastPoseCaptureTime < POSE_CAPTURE_DELAY) return
+
+        val isCorrectPosition = when (currentStage) {
+            EnrollmentStage.CENTER -> Math.abs(pitch) < 12 && Math.abs(yaw) < 12
+            EnrollmentStage.LEFT -> yaw > 15
+            EnrollmentStage.RIGHT -> yaw < -15
+            EnrollmentStage.UP -> pitch > 10
+            EnrollmentStage.DOWN -> pitch < -10
+            else -> false
+        }
+
+        if (isCorrectPosition) {
+            lastPoseCaptureTime = now
+            runOnUiThread {
+                tvStatusHint.text = "🎯 CAPTURANDO..."
+                tvStatusHint.setTextColor(getColor(R.color.kuma_gold))
+            }
+            takePhoto()
+            vibrateEffect()
+        }
+    }
+
+    fun onFaceDetected(face: com.google.mlkit.vision.face.Face) {
+        // Simple presence check for future logic if needed, but no proximity alerts
+    }
+
+    private fun vibrateEffect() {
+        try {
+            val vibrator = getSystemService(android.content.Context.VIBRATOR_SERVICE) as android.os.Vibrator
+            if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) {
+                vibrator.vibrate(android.os.VibrationEffect.createOneShot(50, android.os.VibrationEffect.DEFAULT_AMPLITUDE))
+            } else {
+                @Suppress("DEPRECATION")
+                vibrator.vibrate(50)
+            }
+        } catch (e: Exception) {
+            Log.e("AttendanceCam", "Error vibrando: ${e.message}")
+        }
+    }
+
+    private fun updateEnrollmentGuide() {
+        runOnUiThread {
+            val text = when (currentStage) {
+                EnrollmentStage.CENTER -> "MIRA FIJAMENTE AL CENTRO"
+                EnrollmentStage.LEFT -> "GIRA LENTAMENTE A LA IZQUIERDA"
+                EnrollmentStage.RIGHT -> "GIRA LENTAMENTE A LA DERECHA"
+                EnrollmentStage.UP -> "INCLINA LA CABEZA HACIA ARRIBA"
+                EnrollmentStage.DOWN -> "INCLINA LA CABEZA HACIA ABAJO"
+                EnrollmentStage.DONE -> "¡ANÁLISIS COMPLETADO!"
+            }
+            
+            if (tvStatusHint.text != "🎯 CAPTURANDO...") {
+                tvStatusHint.text = text
+                tvStatusHint.setTextColor(getColor(R.color.kuma_white))
+            }
+            enrollmentOverlay.setCurrentStage(currentStage.ordinal)
+            
+            val progress = (enrollmentDescriptors.size.toFloat() / REQUIRED_ENROLLMENT_COUNT) * 100f
+            enrollmentOverlay.setProgressPercentage(progress)
+        }
     }
 
     private fun takePhoto() {
@@ -181,18 +283,24 @@ class AttendanceCameraActivity : AppCompatActivity() {
     private var enrollmentCount = 0
 
     private fun handleEnrollmentDescriptor(descriptor: List<Double>) {
-        if (enrollmentCount >= REQUIRED_ENROLLMENT_COUNT) return
+        if (currentStage == EnrollmentStage.DONE) return
         
         enrollmentDescriptors.add(descriptor)
-        enrollmentCount++
         
-        runOnUiThread {
-            tvStatusHint.text = "ENTRENANDO: $enrollmentCount / $REQUIRED_ENROLLMENT_COUNT\n(MUEVA LIGERAMENTE LA CABEZA)"
-            tvStatusHint.setTextColor(getColor(R.color.kuma_gold))
-            
-            if (enrollmentCount >= REQUIRED_ENROLLMENT_COUNT) {
-                finalizeEnrollment()
-            }
+        completedStages.add(currentStage)
+        val stages = EnrollmentStage.values()
+        val nextIndex = currentStage.ordinal + 1
+        
+        if (nextIndex < stages.size) {
+            currentStage = stages[nextIndex]
+        }
+        
+        updateEnrollmentGuide()
+
+        if (enrollmentDescriptors.size >= REQUIRED_ENROLLMENT_COUNT) {
+            currentStage = EnrollmentStage.DONE
+            updateEnrollmentGuide()
+            finalizeEnrollment()
         }
     }
 
@@ -229,11 +337,18 @@ class AttendanceCameraActivity : AppCompatActivity() {
     fun onFacePresenceChanged(present: Boolean) {
         if (!present && faceWasPresent) {
             // Face left the camera
-            Log.d("AttendanceCam", "👤 El rostro se retiró. Reiniciando escáner.")
-            lastRecognizedId = null
-            isScanPaused = false
-            tvStatusHint.text = "ESPERANDO ATLETA..."
-            tvStatusHint.setTextColor(getColor(R.color.kuma_white))
+            Log.d("AttendanceCam", "👤 El rostro se retiró.")
+            if (!isEnrollmentMode) {
+                lastRecognizedId = null
+                isScanPaused = false
+                tvStatusHint.text = "ESPERANDO ATLETA..."
+                tvStatusHint.setTextColor(getColor(R.color.kuma_white))
+            }
+        } else if (present && !faceWasPresent) {
+            // Face entered the camera
+            if (isEnrollmentMode) {
+                updateEnrollmentGuide() // Restore instructions immediately
+            }
         }
         faceWasPresent = present
     }
@@ -242,12 +357,15 @@ class AttendanceCameraActivity : AppCompatActivity() {
         if (isScanPaused || lastRecognizedId == result.athleteId) return
 
         if (result.recognized) {
+            vibrateEffect() // 📳 Feedback de éxito
             tvStatusHint.text = "✅ RECONOCIDO: ${result.name}"
             tvStatusHint.setTextColor(getColor(R.color.kuma_gold))
             
             // Auto-submit attendance immediately
             submitAttendance(result.athleteId, result.name, "facial")
         } else {
+            vibrateEffect() // 📳 Feedback de no-reconocido
+            isScanPaused = true // 🥋 Detener análisis hasta que el rostro se retire
             tvStatusHint.text = "👤 ROSTRO NO RECONOCIDO"
             tvStatusHint.setTextColor(getColor(R.color.kuma_red))
         }
@@ -309,10 +427,6 @@ class AttendanceCameraActivity : AppCompatActivity() {
         return android.graphics.BitmapFactory.decodeByteArray(bytes, 0, bytes.size)
     }
 
-    private fun allPermissionsGranted() = REQUIRED_PERMISSIONS.all {
-        ContextCompat.checkSelfPermission(baseContext, it) == PackageManager.PERMISSION_GRANTED
-    }
-
     override fun onDestroy() {
         super.onDestroy()
         cameraExecutor.shutdown()
@@ -322,7 +436,7 @@ class AttendanceCameraActivity : AppCompatActivity() {
         private val options = FaceDetectorOptions.Builder()
             .setPerformanceMode(FaceDetectorOptions.PERFORMANCE_MODE_ACCURATE)
             .setLandmarkMode(FaceDetectorOptions.LANDMARK_MODE_ALL)
-            .setContourMode(FaceDetectorOptions.CONTOUR_MODE_ALL)
+            .setClassificationMode(FaceDetectorOptions.CLASSIFICATION_MODE_ALL) // Added for Euler angles
             .build()
 
         private val detector = FaceDetection.getClient(options)
@@ -333,7 +447,6 @@ class AttendanceCameraActivity : AppCompatActivity() {
             if (mediaImage != null) {
                 val rotationDegrees = imageProxy.imageInfo.rotationDegrees
                 
-                // If rotation is 90 or 270, swap width and height for coordinate mapping
                 if (rotationDegrees == 90 || rotationDegrees == 270) {
                     overlay.setCameraInfo(imageProxy.height, imageProxy.width, true)
                 } else {
@@ -351,9 +464,15 @@ class AttendanceCameraActivity : AppCompatActivity() {
                         for (face in faces) {
                             overlay.add(FaceGraphic(overlay, face))
                             
-                            // Trigger recognition if faces are present and we are not recently matched
-                            if (faces.isNotEmpty()) {
-                                activity?.takePhoto()
+                            // Proximity check
+                            activity?.onFaceDetected(face)
+                            
+                            // Report head pose for premium enrollment
+                            activity?.onFacePoseDetected(face.headEulerAngleX, face.headEulerAngleY)
+
+                            // Trigger recognition if faces are present and we are not recently matched (Regular attendance)
+                            if (faces.isNotEmpty() && !activity!!.isEnrollmentMode) {
+                                activity.takePhoto()
                             }
                         }
                     }
